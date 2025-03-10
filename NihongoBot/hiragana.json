@@ -1,0 +1,462 @@
+[
+    {
+        "Character": "あ",
+        "Romaji": "a",
+        "Variants": []
+    },
+    {
+        "Character": "い",
+        "Romaji": "i",
+        "Variants": []
+    },
+    {
+        "Character": "う",
+        "Romaji": "u",
+        "Variants": [
+            {
+                "Character": "ゔ",
+                "Romaji": "vu"
+            }
+        ]
+    },
+    {
+        "Character": "え",
+        "Romaji": "e",
+        "Variants": []
+    },
+    {
+        "Character": "お",
+        "Romaji": "o",
+        "Variants": []
+    },
+    {
+        "Character": "か",
+        "Romaji": "ka",
+        "Variants": [
+            {
+                "Character": "が",
+                "Romaji": "ga"
+            }
+        ]
+    },
+    {
+        "Character": "き",
+        "Romaji": "ki",
+        "Variants": [
+            {
+                "Character": "ぎ",
+                "Romaji": "gi"
+            }
+        ]
+    },
+    {
+        "Character": "く",
+        "Romaji": "ku",
+        "Variants": [
+            {
+                "Character": "ぐ",
+                "Romaji": "gu"
+            }
+        ]
+    },
+    {
+        "Character": "け",
+        "Romaji": "ke",
+        "Variants": [
+            {
+                "Character": "げ",
+                "Romaji": "ge"
+            }
+        ]
+    },
+    {
+        "Character": "こ",
+        "Romaji": "ko",
+        "Variants": [
+            {
+                "Character": "ご",
+                "Romaji": "go"
+            }
+        ]
+    },
+    {
+        "Character": "さ",
+        "Romaji": "sa",
+        "Variants": [
+            {
+                "Character": "ざ",
+                "Romaji": "za"
+            }
+        ]
+    },
+    {
+        "Character": "し",
+        "Romaji": "shi",
+        "Variants": [
+            {
+                "Character": "じ",
+                "Romaji": "ji"
+            }
+        ]
+    },
+    {
+        "Character": "す",
+        "Romaji": "su",
+        "Variants": [
+            {
+                "Character": "ず",
+                "Romaji": "zu"
+            }
+        ]
+    },
+    {
+        "Character": "せ",
+        "Romaji": "se",
+        "Variants": [
+            {
+                "Character": "ぜ",
+                "Romaji": "ze"
+            }
+        ]
+    },
+    {
+        "Character": "そ",
+        "Romaji": "so",
+        "Variants": [
+            {
+                "Character": "ぞ",
+                "Romaji": "zo"
+            }
+        ]
+    },
+    {
+        "Character": "た",
+        "Romaji": "ta",
+        "Variants": [
+            {
+                "Character": "だ",
+                "Romaji": "da"
+            }
+        ]
+    },
+    {
+        "Character": "ち",
+        "Romaji": "chi",
+        "Variants": [
+            {
+                "Character": "ぢ",
+                "Romaji": "ji"
+            }
+        ]
+    },
+    {
+        "Character": "つ",
+        "Romaji": "tsu",
+        "Variants": [
+            {
+                "Character": "づ",
+                "Romaji": "zu"
+            }
+        ]
+    },
+    {
+        "Character": "て",
+        "Romaji": "te",
+        "Variants": [
+            {
+                "Character": "で",
+                "Romaji": "de"
+            }
+        ]
+    },
+    {
+        "Character": "と",
+        "Romaji": "to",
+        "Variants": [
+            {
+                "Character": "ど",
+                "Romaji": "do"
+            }
+        ]
+    },
+    {
+        "Character": "な",
+        "Romaji": "na",
+        "Variants": []
+    },
+    {
+        "Character": "に",
+        "Romaji": "ni",
+        "Variants": []
+    },
+    {
+        "Character": "ぬ",
+        "Romaji": "nu",
+        "Variants": []
+    },
+    {
+        "Character": "ね",
+        "Romaji": "ne",
+        "Variants": []
+    },
+    {
+        "Character": "の",
+        "Romaji": "no",
+        "Variants": []
+    },
+    {
+        "Character": "は",
+        "Romaji": "ha",
+        "Variants": [
+            {
+                "Character": "ば",
+                "Romaji": "ba"
+            },
+            {
+                "Character": "ぱ",
+                "Romaji": "pa"
+            }
+        ]
+    },
+    {
+        "Character": "ひ",
+        "Romaji": "hi",
+        "Variants": [
+            {
+                "Character": "び",
+                "Romaji": "bi"
+            },
+            {
+                "Character": "ぴ",
+                "Romaji": "pi"
+            }
+        ]
+    },
+    {
+        "Character": "ふ",
+        "Romaji": "fu",
+        "Variants": [
+            {
+                "Character": "ぶ",
+                "Romaji": "bu"
+            },
+            {
+                "Character": "ぷ",
+                "Romaji": "pu"
+            }
+        ]
+    },
+    {
+        "Character": "へ",
+        "Romaji": "he",
+        "Variants": [
+            {
+                "Character": "べ",
+                "Romaji": "be"
+            },
+            {
+                "Character": "ぺ",
+                "Romaji": "pe"
+            }
+        ]
+    },
+    {
+        "Character": "ほ",
+        "Romaji": "ho",
+        "Variants": [
+            {
+                "Character": "ぼ",
+                "Romaji": "bo"
+            },
+            {
+                "Character": "ぽ",
+                "Romaji": "po"
+            }
+        ]
+    },
+    {
+        "Character": "ま",
+        "Romaji": "ma",
+        "Variants": []
+    },
+    {
+        "Character": "み",
+        "Romaji": "mi",
+        "Variants": []
+    },
+    {
+        "Character": "む",
+        "Romaji": "mu",
+        "Variants": []
+    },
+    {
+        "Character": "め",
+        "Romaji": "me",
+        "Variants": []
+    },
+    {
+        "Character": "も",
+        "Romaji": "mo",
+        "Variants": []
+    },
+    {
+        "Character": "や",
+        "Romaji": "ya",
+        "Variants": []
+    },
+    {
+        "Character": "ゆ",
+        "Romaji": "yu",
+        "Variants": []
+    },
+    {
+        "Character": "よ",
+        "Romaji": "yo",
+        "Variants": []
+    },
+    {
+        "Character": "ら",
+        "Romaji": "ra",
+        "Variants": []
+    },
+    {
+        "Character": "り",
+        "Romaji": "ri",
+        "Variants": []
+    },
+    {
+        "Character": "る",
+        "Romaji": "ru",
+        "Variants": []
+    },
+    {
+        "Character": "れ",
+        "Romaji": "re",
+        "Variants": []
+    },
+    {
+        "Character": "ろ",
+        "Romaji": "ro",
+        "Variants": []
+    },
+    {
+        "Character": "わ",
+        "Romaji": "wa",
+        "Variants": []
+    },
+    {
+        "Character": "を",
+        "Romaji": "wo",
+        "Variants": []
+    },
+    {
+        "Character": "ん",
+        "Romaji": "n",
+        "Variants": []
+    },
+    {
+        "Character": "きゃ",
+        "Romaji": "kya",
+        "Variants": []
+    },
+    {
+        "Character": "きゅ",
+        "Romaji": "kyu",
+        "Variants": []
+    },
+    {
+        "Character": "きょ",
+        "Romaji": "kyo",
+        "Variants": []
+    },
+    {
+        "Character": "しゃ",
+        "Romaji": "sha",
+        "Variants": []
+    },
+    {
+        "Character": "しゅ",
+        "Romaji": "shu",
+        "Variants": []
+    },
+    {
+        "Character": "しょ",
+        "Romaji": "sho",
+        "Variants": []
+    },
+    {
+        "Character": "ちゃ",
+        "Romaji": "cha",
+        "Variants": []
+    },
+    {
+        "Character": "ちゅ",
+        "Romaji": "chu",
+        "Variants": []
+    },
+    {
+        "Character": "ちょ",
+        "Romaji": "cho",
+        "Variants": []
+    },
+    {
+        "Character": "にゃ",
+        "Romaji": "nya",
+        "Variants": []
+    },
+    {
+        "Character": "にゅ",
+        "Romaji": "nyu",
+        "Variants": []
+    },
+    {
+        "Character": "にょ",
+        "Romaji": "nyo",
+        "Variants": []
+    },
+    {
+        "Character": "ひゃ",
+        "Romaji": "hya",
+        "Variants": []
+    },
+    {
+        "Character": "ひゅ",
+        "Romaji": "hyu",
+        "Variants": []
+    },
+    {
+        "Character": "ひょ",
+        "Romaji": "hyo",
+        "Variants": []
+    },
+    {
+        "Character": "みゃ",
+        "Romaji": "mya",
+        "Variants": []
+    },
+    {
+        "Character": "みゅ",
+        "Romaji": "myu",
+        "Variants": []
+    },
+    {
+        "Character": "みょ",
+        "Romaji": "myo",
+        "Variants": []
+    },
+    {
+        "Character": "りゃ",
+        "Romaji": "rya",
+        "Variants": []
+    },
+    {
+        "Character": "りゅ",
+        "Romaji": "ryu",
+        "Variants": []
+    },
+    {
+        "Character": "りょ",
+        "Romaji": "ryo",
+        "Variants": []
+    }
+]
