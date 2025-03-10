@@ -58,8 +58,7 @@ public static class TriggerGenerator
         {
             Name = "trigger1",
             Group = "group1",
-            //   StartTimeUtc = firstTriggerTime,
-            StartTimeUtc = DateTime.UtcNow.AddSeconds(10),
+            StartTimeUtc = firstTriggerTime,
             RepeatCount = 0, // Fire once
         };
 

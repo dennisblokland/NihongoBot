@@ -78,6 +78,8 @@ class Program
                     await bot.SendMessage(chatId, $"Your current streak is {streak}.");
                     return;
                 }
+                // send a message to the user if the command is not recognized
+                await bot.SendMessage(chatId, "Command not recognized.");
             }
 
             // handle user answers

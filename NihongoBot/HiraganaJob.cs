@@ -29,7 +29,7 @@ public class HiraganaJob : IJob
             // Insert the Hiragana character into the HiraganaAnswers table
             connection.Execute("INSERT INTO HiraganaAnswers (TelegramId, Character) VALUES (@id, @character);", new { id, character = hiragana.Character });
         }
-       // await RescheduleNextTriggersAsync(context.Scheduler);
+        await RescheduleNextTriggersAsync(context.Scheduler);
         connection.Close();
     }
     private async Task RescheduleNextTriggersAsync(IScheduler scheduler)
