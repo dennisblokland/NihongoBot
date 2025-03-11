@@ -16,7 +16,7 @@ NihongoBot is a Telegram bot written in C# to help users learn Hiragana.
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/NihongoBot.git
+    git clone https://github.com/dennisblokland/NihongoBot.git
     cd NihongoBot
     ```
 
