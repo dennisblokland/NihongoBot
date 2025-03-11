@@ -82,10 +82,13 @@ class Program
             string message = $"Correct! The Romaji for {hiragana.Character} is {hiragana.Romaji}.\n";
             if (hiragana.Variants != null && hiragana.Variants.Count > 0)
             {
-                message += "Variants: " + string.Join(", ", hiragana.Variants) + "\n";
+                message += "Variants: \n";
+                foreach(var variant in hiragana.Variants){
+                    message += "   " + variant.Character + " is " + variant.Romaji + "\n";
+                }
             }
-            message += $"Your current streak is {streak}.";
-            await bot.SendMessage(chatId, message);
+            message += $"Your current streak is **{streak}**.";
+            await bot.SendMessage(chatId, message, ParseMode.Markdown);
         } 
         else
             await bot.SendMessage(chatId, "Incorrect. Please try again.");
@@ -156,7 +159,7 @@ class Program
         {
             case "/start":
                 RegisterUser(chatId, connection);
-                await bot.SendMessage(chatId, "Welcome to NihongoBot! Type /register to start receiving Hiragana practice messages. You have not been registered and will be receiving Hiragana practice messages.");
+                await bot.SendMessage(chatId, "Welcome to NihongoBot! You're now registered to receive Hiragana practice messages.");
                 break;
             case "/streak":
                 int streak = connection.QueryFirstOrDefault<int>("SELECT Streak FROM Users WHERE TelegramId = @ChatId;", new { ChatId = chatId });
