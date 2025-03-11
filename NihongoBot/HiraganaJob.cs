@@ -17,11 +17,11 @@ public class HiraganaJob : IJob
         Random random = new();
         HiraganaEntry hiragana = Program.HiraganaList[random.Next(Program.HiraganaList.Count)];
 
-        IEnumerable<int> chatIds = connection.Query<int>("SELECT TelegramId FROM Users").ToList();
+        IEnumerable<int> chatIds = [.. connection.Query<int>("SELECT TelegramId FROM Users")];
 
         foreach (int id in chatIds)
         {
-            await Program.BotClient.SendTextMessageAsync(id, $"What is the Romaji for: {hiragana.Character}?");
+            await Program.BotClient.SendMessage(id, $"What is the Romaji for: {hiragana.Character}?");
 
             // check if the user has answered previous question in the HiraganaAnswers table and if not, update the streak to 0
             connection.Execute("UPDATE Users SET Streak = 0 WHERE TelegramId = @id AND NOT EXISTS (SELECT * FROM HiraganaAnswers WHERE TelegramId = @id AND Correct = 1);", new { id });
@@ -32,7 +32,8 @@ public class HiraganaJob : IJob
         await RescheduleNextTriggersAsync(context.Scheduler);
         connection.Close();
     }
-    private async Task RescheduleNextTriggersAsync(IScheduler scheduler)
+    
+    private static async Task RescheduleNextTriggersAsync(IScheduler scheduler)
     {
         var triggers = TriggerGenerator.GetNextTriggers(10, 21); // Generate new triggers
 
