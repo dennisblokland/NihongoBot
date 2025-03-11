@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Quartz.Impl.Triggers;
 using Quartz;
 using Microsoft.Data.Sqlite;

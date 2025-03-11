@@ -17,7 +17,7 @@ public class HiraganaJob : IJob
         Random random = new();
         HiraganaEntry hiragana = Program.HiraganaList[random.Next(Program.HiraganaList.Count)];
 
-        IEnumerable<int> chatIds = connection.Query<int>("SELECT TelegramId FROM Users").ToList();
+        IEnumerable<int> chatIds = [.. connection.Query<int>("SELECT TelegramId FROM Users")];
 
         foreach (int id in chatIds)
         {
@@ -32,7 +32,8 @@ public class HiraganaJob : IJob
         await RescheduleNextTriggersAsync(context.Scheduler);
         connection.Close();
     }
-    private async Task RescheduleNextTriggersAsync(IScheduler scheduler)
+    
+    private static async Task RescheduleNextTriggersAsync(IScheduler scheduler)
     {
         var triggers = TriggerGenerator.GetNextTriggers(10, 21); // Generate new triggers
 
