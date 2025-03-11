@@ -41,9 +41,8 @@ class Program
         // Schedule the daily tasks
         await ScheduleDailyTasks();
 
-        // Setup bot commands so user can see WHAT IS GOING ON HEEREEE
+        // Setup commands to the bot to build the user's toolbox.
         await BotClient.SetMyCommands(Commands);
-        // BREAAWKFAST
 
         // Start receiving messages
         BotClient.StartReceiving(UpdateHandler, ErrorHandler);    
@@ -60,10 +59,13 @@ class Program
         {
             long chatId = update.Message.Chat.Id;
             string userMessage = update.Message.Text.Trim().ToLower();
-            if (userMessage.StartsWith("/"))
+            if (userMessage.StartsWith("/")){
                 await HandleCommand(bot, chatId, userMessage, connection);
+            }
             else // For now, if it's not a command, then it might be a answer to a question I've asked. (Can be made into a session command handler.)
+            {
                 await ProcessAnswer(bot, connection, chatId, userMessage);
+            }
         }
         connection.Close();
     }
@@ -90,8 +92,9 @@ class Program
             message += $"Your current streak is **{streak}**.";
             await bot.SendMessage(chatId, message, ParseMode.Markdown);
         } 
-        else
+        else {
             await bot.SendMessage(chatId, "Incorrect. Please try again.");
+        }
     }
 
     private static Task ErrorHandler(ITelegramBotClient bot, Exception exception, CancellationToken token)
