@@ -7,6 +7,7 @@ using Quartz.Impl;
 using Microsoft.Data.Sqlite;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using Telegram.Bot.Types.ReplyMarkups;
 
 class Program
 {
@@ -154,11 +155,8 @@ class Program
         switch (command)
         {
             case "/start":
-                await bot.SendMessage(chatId, "Welcome to NihongoBot! Type /register to start receiving Hiragana practice messages.");
-                break;
-            case "/register":
                 RegisterUser(chatId, connection);
-                await bot.SendMessage(chatId, "You have been registered! You will now receive Hiragana practice messages.");
+                await bot.SendMessage(chatId, "Welcome to NihongoBot! Type /register to start receiving Hiragana practice messages. You have not been registered and will be receiving Hiragana practice messages.");
                 break;
             case "/streak":
                 int streak = connection.QueryFirstOrDefault<int>("SELECT Streak FROM Users WHERE TelegramId = @ChatId;", new { ChatId = chatId });
