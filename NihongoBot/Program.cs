@@ -22,9 +22,10 @@ class Program
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddEnvironmentVariables()
             .Build();
 
-        BotToken = config["TelegramBotToken"];
+        BotToken = config["TelegramBotToken"] ?? Environment.GetEnvironmentVariable("TelegramBotToken");
         BotClient = new TelegramBotClient(BotToken);
 
         // Load Hiragana from JSON

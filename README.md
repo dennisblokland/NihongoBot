@@ -37,6 +37,18 @@ NihongoBot is a Telegram bot written in C# to help users learn Hiragana.
     dotnet run
     ```
 
+## Running with Docker
+
+1. Build the Docker image:
+    ```sh
+    docker build -t nihongobot .
+    ```
+
+2. Run the Docker container:
+    ```sh
+    docker run -e TelegramBotToken=YOUR_TELEGRAM_BOT_TOKEN nihongobot
+    ```
+
 ## Usage
 
 Register yourself by sending /start to the bot
