@@ -15,11 +15,18 @@ namespace Persistence
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-              if (!optionsBuilder.IsConfigured)
+            if (!optionsBuilder.IsConfigured)
             {
                 optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=NihongoBot;Username=dev;Password=devpassword");
             }
         }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+						
+            modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+        }
+
          public override int SaveChanges()
         {
             UpdateAuditFields();

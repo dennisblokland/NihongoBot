@@ -1,9 +1,9 @@
 using Telegram.Bot;
 using Quartz;
 using Microsoft.Data.Sqlite;
-using Dapper;
 using Telegram.Bot.Types;
 using SkiaSharp;
+using Dapper;
 
 public class HiraganaJob : IJob
 {
@@ -19,9 +19,9 @@ public class HiraganaJob : IJob
 		Random random = new();
 		HiraganaEntry hiragana = Program.HiraganaList[random.Next(Program.HiraganaList.Count)];
 
-		IEnumerable<int> chatIds = [.. connection.Query<int>("SELECT TelegramId FROM Users")];
+		IEnumerable<long> chatIds = Program.DbContext.Users.Select(u => u.TelegramId);
 
-		foreach (int id in chatIds)
+		foreach (long id in chatIds)
 		{
 			byte[] imageBytes = Program.RenderCharacterToImage(hiragana.Character);
 			using MemoryStream stream = new(imageBytes);
@@ -35,7 +35,7 @@ public class HiraganaJob : IJob
 			// Insert the Hiragana character into the HiraganaAnswers table
 			connection.Execute("INSERT INTO HiraganaAnswers (TelegramId, Character) VALUES (@id, @character);", new { id, character = hiragana.Character });
 		}
-		await RescheduleNextTriggersAsync(context.Scheduler);
+		//await RescheduleNextTriggersAsync(context.Scheduler);
 		connection.Close();
 	}
 

@@ -60,6 +60,8 @@ public static class TriggerGenerator
             RepeatCount = 0, // Fire once
         };
 
+        trigger1.StartTimeUtc = DateTime.UtcNow.AddSeconds(10); // Start 10 seconds after now
+
         SimpleTriggerImpl trigger2 = new()
         {
             Name = "trigger2",

@@ -1,9 +1,9 @@
 # Use a .NET 8 base image for the container
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 
 # Copy the project files and build the application
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY ["NihongoBot/NihongoBot.csproj", "NihongoBot/"]
 RUN dotnet restore "NihongoBot/NihongoBot.csproj"
