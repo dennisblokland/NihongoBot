@@ -1,0 +1,48 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+
+using NihongoBot.Domain;
+using NihongoBot.Domain.Base;
+
+namespace Persistence
+{
+    public class AppDbContext : DbContext
+    {
+        public AppDbContext() : base() { }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+        public DbSet<User> Users { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+              if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=NihongoBot;Username=dev;Password=devpassword");
+            }
+        }
+         public override int SaveChanges()
+        {
+            UpdateAuditFields();
+            return base.SaveChanges();
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            UpdateAuditFields();
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void UpdateAuditFields()
+        {
+			IEnumerable<EntityEntry<DomainEntity>> entries = ChangeTracker.Entries<DomainEntity>();
+
+            foreach (var entry in entries)
+            {
+                if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.UpdateTimestamps();
+                }
+            }
+        }
+    }
+}
