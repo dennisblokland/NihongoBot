@@ -21,7 +21,9 @@ public class HiraganaJob : IJob
 
         foreach (int id in chatIds)
         {
-            await Program.BotClient.SendMessage(id, $"What is the Romaji for: {hiragana.Character}?");
+            byte[] imageBytes = Program.RenderCharacterToImage(hiragana.Character);
+            using MemoryStream stream = new(imageBytes);
+            await Program.BotClient.SendPhotoAsync(id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream, "hiragana.png"), $"What is the Romaji for: {hiragana.Character}?");
 
             // check if the user has answered previous question in the HiraganaAnswers table and if not, update the streak to 0
             connection.Execute("UPDATE Users SET Streak = 0 WHERE TelegramId = @id AND NOT EXISTS (SELECT * FROM HiraganaAnswers WHERE TelegramId = @id AND Correct = 1);", new { id });

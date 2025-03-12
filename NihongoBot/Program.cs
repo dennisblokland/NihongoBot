@@ -8,6 +8,8 @@ using Microsoft.Data.Sqlite;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Telegram.Bot.Types.ReplyMarkups;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 class Program
 {
@@ -181,4 +183,21 @@ class Program
         new BotCommand { Command = "register", Description = "Register to receive Hiragana practice messages" },
         new BotCommand { Command = "streak", Description = "Check your current streak" },
     ];
+
+    private static byte[] RenderCharacterToImage(string character)
+    {
+        int width = 100;
+        int height = 100;
+        using Bitmap bitmap = new(width, height);
+        using Graphics graphics = Graphics.FromImage(bitmap);
+        using Font font = new("Arial", 48);
+        using SolidBrush brush = new(Color.Black);
+
+        graphics.FillRectangle(Brushes.White, 0, 0, width, height);
+        graphics.DrawString(character, font, brush, new PointF(10, 10));
+
+        using MemoryStream memoryStream = new();
+        bitmap.Save(memoryStream, ImageFormat.Png);
+        return memoryStream.ToArray();
+    }
 }
