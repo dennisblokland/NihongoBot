@@ -8,6 +8,7 @@ using Microsoft.Data.Sqlite;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Telegram.Bot.Types.ReplyMarkups;
+using SkiaSharp;
 
 class Program
 {
@@ -45,39 +46,40 @@ class Program
         // Setup commands to the bot to build the user's toolbox.
         await BotClient.SetMyCommands(Commands);
 
-        // Start receiving messages
-        BotClient.StartReceiving(UpdateHandler, ErrorHandler);    
+		// Start receiving messages
+		BotClient.StartReceiving(UpdateHandler, ErrorHandler);
 
-        Console.WriteLine("Bot is running...");
-        Console.ReadLine();
-    }
+		Console.WriteLine("Bot is running...");
+		Console.ReadLine();
+	}
 
-    private static async Task UpdateHandler(ITelegramBotClient bot, Update update, CancellationToken token)
-    {
-        using SqliteConnection connection = new("Data Source=nihongoBot.db");
+	private static async Task UpdateHandler(ITelegramBotClient bot, Update update, CancellationToken token)
+	{
+		using SqliteConnection connection = new("Data Source=nihongoBot.db");
 
-        if (update.Type == UpdateType.Message && update.Message?.Text != null)
-        {
-            long chatId = update.Message.Chat.Id;
-            string userMessage = update.Message.Text.Trim().ToLower();
-            if (userMessage.StartsWith("/")){
-                await HandleCommand(bot, chatId, userMessage, connection);
-            }
-            else // For now, if it's not a command, then it might be a answer to a question I've asked. (Can be made into a session command handler.)
-            {
-                await ProcessAnswer(bot, connection, chatId, userMessage);
-            }
-        }
-        connection.Close();
-    }
+		if (update.Type == UpdateType.Message && update.Message?.Text != null)
+		{
+			long chatId = update.Message.Chat.Id;
+			string userMessage = update.Message.Text.Trim().ToLower();
+			if (userMessage.StartsWith("/"))
+			{
+				await HandleCommand(bot, chatId, userMessage, connection);
+			}
+			else // For now, if it's not a command, then it might be a answer to a question I've asked. (Can be made into a session command handler.)
+			{
+				await ProcessAnswer(bot, connection, chatId, userMessage);
+			}
+		}
+		connection.Close();
+	}
 
-    private static async Task ProcessAnswer(ITelegramBotClient bot, SqliteConnection connection, long chatId, string userMessage)
-    {
-        HiraganaAnswer lastHiragana = connection.QueryFirstOrDefault<HiraganaAnswer>(@"SELECT id, Character FROM HiraganaAnswers WHERE TelegramId = @ChatId ORDER BY Id DESC LIMIT 1;", new { ChatId = chatId });
+	private static async Task ProcessAnswer(ITelegramBotClient bot, SqliteConnection connection, long chatId, string userMessage)
+	{
+		HiraganaAnswer lastHiragana = connection.QueryFirstOrDefault<HiraganaAnswer>(@"SELECT id, Character FROM HiraganaAnswers WHERE TelegramId = @ChatId ORDER BY Id DESC LIMIT 1;", new { ChatId = chatId });
 
-        HiraganaEntry? hiragana = HiraganaList.Find(h => h.Character == lastHiragana.Character && h.Romaji == userMessage.ToLower());
-        if (hiragana != null)
-        {
+		HiraganaEntry? hiragana = HiraganaList.Find(h => h.Character == lastHiragana.Character && h.Romaji == userMessage.ToLower());
+		if (hiragana != null)
+		{
             connection.Execute("UPDATE HiraganaAnswers SET Correct = 1 WHERE Id = @id", new { id = lastHiragana.Id });
             connection.Execute("UPDATE Users SET Streak = Streak + 1 WHERE TelegramId = @ChatId;", new { ChatId = chatId });
             //send the a message to the user with the correct answer possible variations and the streak
@@ -92,22 +94,23 @@ class Program
             }
             message += $"Your current streak is **{streak}**.";
             await bot.SendMessage(chatId, message, ParseMode.Markdown);
-        } 
-        else {
-            await bot.SendMessage(chatId, "Incorrect. Please try again.");
-        }
-    }
+		}
+		else
+		{
+			await bot.SendMessage(chatId, "Incorrect. Please try again.");
+		}
+	}
 
-    private static Task ErrorHandler(ITelegramBotClient bot, Exception exception, CancellationToken token)
-    {
-        Console.WriteLine("Error: " + exception.Message);
-        return Task.CompletedTask;
-    }
+	private static Task ErrorHandler(ITelegramBotClient bot, Exception exception, CancellationToken token)
+	{
+		Console.WriteLine("Error: " + exception.Message);
+		return Task.CompletedTask;
+	}
 
-    private static void InitializeDatabase()
-    {
-        using SqliteConnection connection = new("Data Source=nihongoBot.db");
-        connection.Execute(@"CREATE TABLE IF NOT EXISTS Users (
+	private static void InitializeDatabase()
+	{
+		using SqliteConnection connection = new("Data Source=nihongoBot.db");
+		connection.Execute(@"CREATE TABLE IF NOT EXISTS Users (
             Id INTEGER PRIMARY KEY,
             TelegramId INTEGER UNIQUE,
             Streak INTEGER DEFAULT 0
@@ -181,4 +184,49 @@ class Program
         new BotCommand { Command = "register", Description = "Register to receive Hiragana practice messages" },
         new BotCommand { Command = "streak", Description = "Check your current streak" },
     ];
+
+	public static byte[] RenderCharacterToImage(string character)
+	{
+		int width = 250;
+		int height = 250;
+		int fontSize = 126;
+		if (character.Length > 1)
+			fontSize = 100;
+
+		using SKBitmap bitmap = new(width, height);
+		using SKCanvas canvas = new(bitmap);
+		using SKPaint paint = new()
+		{
+			Color = SKColors.Black,
+			IsAntialias = true
+		};
+
+		string fontPath = "fonts/NotoSansJP-Regular.ttf";
+		//check if file exists
+		if (!File.Exists(fontPath))
+		{
+			Console.WriteLine("Font file not found.");
+			return Array.Empty<byte>();
+		}
+		using SKTypeface typeface = SKTypeface.FromFile(fontPath);
+		using SKFont font = new()
+		{
+			Size = fontSize,
+			Typeface = typeface
+		};
+
+		canvas.Clear(SKColors.White);
+
+		// Measure the string to center it
+		SKRect textBounds = new();
+		font.MeasureText(character, out textBounds);
+		float x = (width - textBounds.Width) / 2 - 10;
+		float y = (height + textBounds.Height) / 2;
+
+		canvas.DrawText(character, x, y, SKTextAlign.Left, font, paint);
+
+		using SKImage image = SKImage.FromBitmap(bitmap);
+		using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
+		return data.ToArray();
+	}
 }
