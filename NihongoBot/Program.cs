@@ -8,8 +8,7 @@ using Microsoft.Data.Sqlite;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Telegram.Bot.Types.ReplyMarkups;
-using System.Drawing;
-using System.Drawing.Imaging;
+using SkiaSharp;
 
 class Program
 {
@@ -194,24 +193,27 @@ class Program
 		if (character.Length > 1)
 			fontSize = 100;
 
-		using Bitmap bitmap = new(width, height);
-		using Graphics graphics = Graphics.FromImage(bitmap);
-		using Font font = new("Arial", fontSize);
-		using SolidBrush brush = new(System.Drawing.Color.Black);
+		using SKBitmap bitmap = new(width, height);
+		using SKCanvas canvas = new(bitmap);
+		using SKPaint paint = new()
+		{
+			Color = SKColors.Black,
+			IsAntialias = true,
+			TextSize = fontSize
+		};
 
-		graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-		graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-
-		graphics.FillRectangle(Brushes.White, 0, 0, width, height);
+		canvas.Clear(SKColors.White);
 
 		// Measure the string to center it
-		SizeF textSize = graphics.MeasureString(character, font);
-		PointF point = new((width - textSize.Width) / 2, (height - textSize.Height) / 2 + 10);
+		SKRect textBounds = new();
+		paint.MeasureText(character, ref textBounds);
+		float x = (width - textBounds.Width) / 2;
+		float y = (height + textBounds.Height) / 2;
 
-		graphics.DrawString(character, font, brush, point);
+		canvas.DrawText(character, x, y, paint);
 
-		using MemoryStream memoryStream = new();
-		bitmap.Save(memoryStream, ImageFormat.Png);
-		return memoryStream.ToArray();
+		using SKImage image = SKImage.FromBitmap(bitmap);
+		using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
+		return data.ToArray();
 	}
 }
