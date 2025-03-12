@@ -47,39 +47,40 @@ class Program
         // Setup commands to the bot to build the user's toolbox.
         await BotClient.SetMyCommands(Commands);
 
-        // Start receiving messages
-        BotClient.StartReceiving(UpdateHandler, ErrorHandler);    
+		// Start receiving messages
+		BotClient.StartReceiving(UpdateHandler, ErrorHandler);
 
-        Console.WriteLine("Bot is running...");
-        Console.ReadLine();
-    }
+		Console.WriteLine("Bot is running...");
+		Console.ReadLine();
+	}
 
-    private static async Task UpdateHandler(ITelegramBotClient bot, Update update, CancellationToken token)
-    {
-        using SqliteConnection connection = new("Data Source=nihongoBot.db");
+	private static async Task UpdateHandler(ITelegramBotClient bot, Update update, CancellationToken token)
+	{
+		using SqliteConnection connection = new("Data Source=nihongoBot.db");
 
-        if (update.Type == UpdateType.Message && update.Message?.Text != null)
-        {
-            long chatId = update.Message.Chat.Id;
-            string userMessage = update.Message.Text.Trim().ToLower();
-            if (userMessage.StartsWith("/")){
-                await HandleCommand(bot, chatId, userMessage, connection);
-            }
-            else // For now, if it's not a command, then it might be a answer to a question I've asked. (Can be made into a session command handler.)
-            {
-                await ProcessAnswer(bot, connection, chatId, userMessage);
-            }
-        }
-        connection.Close();
-    }
+		if (update.Type == UpdateType.Message && update.Message?.Text != null)
+		{
+			long chatId = update.Message.Chat.Id;
+			string userMessage = update.Message.Text.Trim().ToLower();
+			if (userMessage.StartsWith("/"))
+			{
+				await HandleCommand(bot, chatId, userMessage, connection);
+			}
+			else // For now, if it's not a command, then it might be a answer to a question I've asked. (Can be made into a session command handler.)
+			{
+				await ProcessAnswer(bot, connection, chatId, userMessage);
+			}
+		}
+		connection.Close();
+	}
 
-    private static async Task ProcessAnswer(ITelegramBotClient bot, SqliteConnection connection, long chatId, string userMessage)
-    {
-        HiraganaAnswer lastHiragana = connection.QueryFirstOrDefault<HiraganaAnswer>(@"SELECT id, Character FROM HiraganaAnswers WHERE TelegramId = @ChatId ORDER BY Id DESC LIMIT 1;", new { ChatId = chatId });
+	private static async Task ProcessAnswer(ITelegramBotClient bot, SqliteConnection connection, long chatId, string userMessage)
+	{
+		HiraganaAnswer lastHiragana = connection.QueryFirstOrDefault<HiraganaAnswer>(@"SELECT id, Character FROM HiraganaAnswers WHERE TelegramId = @ChatId ORDER BY Id DESC LIMIT 1;", new { ChatId = chatId });
 
-        HiraganaEntry? hiragana = HiraganaList.Find(h => h.Character == lastHiragana.Character && h.Romaji == userMessage.ToLower());
-        if (hiragana != null)
-        {
+		HiraganaEntry? hiragana = HiraganaList.Find(h => h.Character == lastHiragana.Character && h.Romaji == userMessage.ToLower());
+		if (hiragana != null)
+		{
             connection.Execute("UPDATE HiraganaAnswers SET Correct = 1 WHERE Id = @id", new { id = lastHiragana.Id });
             connection.Execute("UPDATE Users SET Streak = Streak + 1 WHERE TelegramId = @ChatId;", new { ChatId = chatId });
             //send the a message to the user with the correct answer possible variations and the streak
@@ -94,22 +95,23 @@ class Program
             }
             message += $"Your current streak is **{streak}**.";
             await bot.SendMessage(chatId, message, ParseMode.Markdown);
-        } 
-        else {
-            await bot.SendMessage(chatId, "Incorrect. Please try again.");
-        }
-    }
+		}
+		else
+		{
+			await bot.SendMessage(chatId, "Incorrect. Please try again.");
+		}
+	}
 
-    private static Task ErrorHandler(ITelegramBotClient bot, Exception exception, CancellationToken token)
-    {
-        Console.WriteLine("Error: " + exception.Message);
-        return Task.CompletedTask;
-    }
+	private static Task ErrorHandler(ITelegramBotClient bot, Exception exception, CancellationToken token)
+	{
+		Console.WriteLine("Error: " + exception.Message);
+		return Task.CompletedTask;
+	}
 
-    private static void InitializeDatabase()
-    {
-        using SqliteConnection connection = new("Data Source=nihongoBot.db");
-        connection.Execute(@"CREATE TABLE IF NOT EXISTS Users (
+	private static void InitializeDatabase()
+	{
+		using SqliteConnection connection = new("Data Source=nihongoBot.db");
+		connection.Execute(@"CREATE TABLE IF NOT EXISTS Users (
             Id INTEGER PRIMARY KEY,
             TelegramId INTEGER UNIQUE,
             Streak INTEGER DEFAULT 0
@@ -184,20 +186,32 @@ class Program
         new BotCommand { Command = "streak", Description = "Check your current streak" },
     ];
 
-    private static byte[] RenderCharacterToImage(string character)
-    {
-        int width = 100;
-        int height = 100;
-        using Bitmap bitmap = new(width, height);
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        using Font font = new("Arial", 48);
-        using SolidBrush brush = new(Color.Black);
+	public static byte[] RenderCharacterToImage(string character)
+	{
+		int width = 250;
+		int height = 250;
+		int fontSize = 126;
+		if (character.Length > 1)
+			fontSize = 100;
 
-        graphics.FillRectangle(Brushes.White, 0, 0, width, height);
-        graphics.DrawString(character, font, brush, new PointF(10, 10));
+		using Bitmap bitmap = new(width, height);
+		using Graphics graphics = Graphics.FromImage(bitmap);
+		using Font font = new("Arial", fontSize);
+		using SolidBrush brush = new(System.Drawing.Color.Black);
 
-        using MemoryStream memoryStream = new();
-        bitmap.Save(memoryStream, ImageFormat.Png);
-        return memoryStream.ToArray();
-    }
+		graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+		graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+		graphics.FillRectangle(Brushes.White, 0, 0, width, height);
+
+		// Measure the string to center it
+		SizeF textSize = graphics.MeasureString(character, font);
+		PointF point = new((width - textSize.Width) / 2, (height - textSize.Height) / 2 + 10);
+
+		graphics.DrawString(character, font, brush, point);
+
+		using MemoryStream memoryStream = new();
+		bitmap.Save(memoryStream, ImageFormat.Png);
+		return memoryStream.ToArray();
+	}
 }
