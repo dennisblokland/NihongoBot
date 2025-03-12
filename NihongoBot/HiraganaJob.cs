@@ -33,7 +33,7 @@ public class HiraganaJob : IJob
 			connection.Execute("UPDATE Users SET Streak = 0 WHERE TelegramId = @id AND NOT EXISTS (SELECT * FROM HiraganaAnswers WHERE TelegramId = @id AND Correct = 1);", new { id });
 
 			// Insert the Hiragana character into the HiraganaAnswers table
-			connection.Execute("INSERT INTO HiraganaAnswers (TelegramId, Character) VALUES (@id, character = hiragana.Character });
+			connection.Execute("INSERT INTO HiraganaAnswers (TelegramId, Character) VALUES (@id, @character);", new { id, character = hiragana.Character });
 		}
 		await RescheduleNextTriggersAsync(context.Scheduler);
 		connection.Close();

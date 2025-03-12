@@ -198,19 +198,32 @@ class Program
 		using SKPaint paint = new()
 		{
 			Color = SKColors.Black,
-			IsAntialias = true,
-			TextSize = fontSize
+			IsAntialias = true
+		};
+
+		string fontPath = "fonts/NotoSansJP-Regular.ttf";
+		//check if file exists
+		if (!File.Exists(fontPath))
+		{
+			Console.WriteLine("Font file not found.");
+			return Array.Empty<byte>();
+		}
+		using SKTypeface typeface = SKTypeface.FromFile(fontPath);
+		using SKFont font = new()
+		{
+			Size = fontSize,
+			Typeface = typeface
 		};
 
 		canvas.Clear(SKColors.White);
 
 		// Measure the string to center it
 		SKRect textBounds = new();
-		paint.MeasureText(character, ref textBounds);
-		float x = (width - textBounds.Width) / 2;
+		font.MeasureText(character, out textBounds);
+		float x = (width - textBounds.Width) / 2 - 10;
 		float y = (height + textBounds.Height) / 2;
 
-		canvas.DrawText(character, x, y, paint);
+		canvas.DrawText(character, x, y, SKTextAlign.Left, font, paint);
 
 		using SKImage image = SKImage.FromBitmap(bitmap);
 		using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
