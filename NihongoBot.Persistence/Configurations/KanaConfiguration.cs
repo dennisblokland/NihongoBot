@@ -46,7 +46,7 @@ namespace NihongoBot.Persistence.Configurations
             if (!File.Exists(jsonFilePath))
             {
                 Console.WriteLine($"Error: File '{jsonFilePath}' not found.");
-                return new List<Kana>();
+                return [];
             }
 
             string jsonData = File.ReadAllText(jsonFilePath);

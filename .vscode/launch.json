@@ -5,11 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "C#: NihongoBot.Server Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/NihongoBot.Server/NihongoBot.Server.csproj"
+        },
+        {
             "name": "C#: NihongoBot",
             "type": "dotnet",
             "request": "launch",
             "projectPath": "${workspaceFolder}\\NihongoBot\\NihongoBot.csproj",
             "launchConfigurationId": "TargetFramework=;NihongoBot",
         }
+
     ]
 }
