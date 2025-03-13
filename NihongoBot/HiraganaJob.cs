@@ -11,7 +11,6 @@ public class HiraganaJob : IJob
 
 		Console.WriteLine("Sending Hiragana character...");
 
-		if (Program.HiraganaList.Count == 0) return;
 		Random random = new();
 		Kana hiragana = Program.DbContext.Kanas
 			.Where(k => k.Type == KanaType.Hiragana)
