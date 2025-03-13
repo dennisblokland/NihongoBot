@@ -1,6 +1,5 @@
 using Quartz.Impl.Triggers;
 using Quartz;
-using Microsoft.Data.Sqlite;
 
 public static class TriggerGenerator
 {
@@ -60,6 +59,8 @@ public static class TriggerGenerator
             RepeatCount = 0, // Fire once
         };
 
+        trigger1.StartTimeUtc = DateTime.UtcNow.AddSeconds(10); // Start 10 seconds after now
+
         SimpleTriggerImpl trigger2 = new()
         {
             Name = "trigger2",
@@ -73,19 +74,18 @@ public static class TriggerGenerator
 
     private static DateTime? GetLastTriggerTime()
     {
-        using SqliteConnection connection = new("Data Source=nihongoBot.db");
-        connection.Open();
-        string sql = "SELECT TriggerTime FROM TriggerLog ORDER BY Id DESC LIMIT 1;";
-        using SqliteCommand command = new(sql, connection);
-        using SqliteDataReader reader = command.ExecuteReader();
-        if (reader.Read())
-        {
-            var result = reader.GetString(0);
-            connection.Close();
-            return DateTime.Parse(result);
-        }
+        // connection.Open();
+        // string sql = "SELECT TriggerTime FROM TriggerLog ORDER BY Id DESC LIMIT 1;";
+        // using SqliteCommand command = new(sql, connection);
+        // using SqliteDataReader reader = command.ExecuteReader();
+        // if (reader.Read())
+        // {
+        //     var result = reader.GetString(0);
+        //     connection.Close();
+        //     return DateTime.Parse(result);
+        // }
 
-        connection.Close(); // Close the connection
+        // connection.Close(); // Close the connection
 
         return null; // Return null if no log is found
     }
