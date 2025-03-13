@@ -2,22 +2,32 @@ using System;
 
 namespace NihongoBot.Domain.Base
 {
-    public abstract class DomainEntity
+    public abstract class DomainEntity<T>
     {
-        public Guid Id { get; private set; }
-        public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; private set; }
+        public T Id { get; set; }
+        public DateTime? CreatedAt { get; private set; }
+        public DateTime? UpdatedAt { get; private set; }
 
         protected DomainEntity()
         {
-            Id = Guid.NewGuid();
-            CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
+
         }
 
         public void UpdateTimestamps()
         {
             UpdatedAt = DateTime.UtcNow;
+            if (CreatedAt == null)
+            {
+                CreatedAt = DateTime.UtcNow;
+            }
+        }
+    }
+
+    public abstract class DomainEntity : DomainEntity<Guid>
+    {
+        protected DomainEntity() : base()
+        {
+            Id = Guid.NewGuid();
         }
     }
 }

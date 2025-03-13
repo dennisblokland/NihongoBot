@@ -7,7 +7,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.HasIndex(u => u.Id);
+        builder.HasKey(u => u.Id);
         builder.Property(u => u.TelegramId).IsRequired();
         builder.HasIndex(u => u.TelegramId).IsUnique();
 
