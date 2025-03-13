@@ -1,197 +1,198 @@
-﻿using System.Text.Json;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+
+using NihongoBot.Persistence;
+
+using Quartz;
+using Quartz.Impl;
+
+using SkiaSharp;
+
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Quartz;
-using Quartz.Impl;
-using Microsoft.Extensions.Configuration;
-using SkiaSharp;
-using Persistence;
-using Microsoft.EntityFrameworkCore;
 
-class Program
+namespace NihongoBot
 {
-    private static readonly string BotToken;
-    public static readonly TelegramBotClient BotClient;
-    private static IScheduler Scheduler;
+	public class Program
+	{
+		public static readonly TelegramBotClient _botClient;
+		private static readonly string _botToken;
+		private static IScheduler _scheduler;
 
-    public static readonly AppDbContext DbContext;
+		public static readonly AppDbContext DbContext;
 
-    static Program()
-    {
-        IConfigurationRoot config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
-            .AddEnvironmentVariables()
-            .Build();
+		static Program()
+		{
+			IConfigurationRoot config = new ConfigurationBuilder()
+			.SetBasePath(Directory.GetCurrentDirectory())
+			.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+			.AddJsonFile("appsettings.Development.json", optional: true)
+			.AddEnvironmentVariables()
+			.Build();
 
-        BotToken = config["TelegramBotToken"] ?? Environment.GetEnvironmentVariable("TelegramBotToken");
-        BotClient = new TelegramBotClient(BotToken);
+			_botToken = config["TelegramBotToken"] ?? Environment.GetEnvironmentVariable("TelegramBotToken");
+			_botClient = new TelegramBotClient(_botToken);
 
-        DbContext = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(config.GetConnectionString("NihongoBot"))
-            .Options);
-    }
+			DbContext = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+			.UseNpgsql(config.GetConnectionString("NihongoBot"))
+			.Options);
+		}
 
-    static async Task Main()
-    {
-        Console.WriteLine("Starting NihongoBot...");
-        // Schedule the daily tasks
-        await ScheduleDailyTasks();
+		static async Task Main()
+		{
+			Console.WriteLine("Starting NihongoBot...");
+			// Schedule the daily tasks
+			await ScheduleDailyTasks();
 
-        // Setup commands to the bot to build the user's toolbox.
-        await BotClient.SetMyCommands(Commands);
+			// Setup commands to the bot to build the user's toolbox.
+			await _botClient.SetMyCommands(Commands);
 
-        // Start receiving messages
-        BotClient.StartReceiving(UpdateHandler, ErrorHandler);
+			// Start receiving messages
+			_botClient.StartReceiving(UpdateHandler, ErrorHandler);
 
-        Console.WriteLine("Bot is running...");
-        Console.ReadLine();
-    }
+			Console.WriteLine("Bot is running...");
+			Console.ReadLine();
+		}
 
 
-    private static async Task UpdateHandler(ITelegramBotClient bot, Update update, CancellationToken token)
-    {
+		private static async Task UpdateHandler(ITelegramBotClient bot, Update update, CancellationToken token)
+		{
+			if (update.Type == UpdateType.Message && update.Message?.Text != null)
+			{
+				long chatId = update.Message.Chat.Id;
+				string userMessage = update.Message.Text.Trim().ToLower();
+				if (userMessage.StartsWith("/"))
+				{
+					await HandleCommand(bot, chatId, userMessage);
+				}
+				else // For now, if it's not a command, then it might be a answer to a question I've asked. (Can be made into a session command handler.)
+				{
+					await ProcessAnswer(bot, chatId, userMessage);
+				}
+			}
+		}
 
-        if (update.Type == UpdateType.Message && update.Message?.Text != null)
-        {
-            long chatId = update.Message.Chat.Id;
-            string userMessage = update.Message.Text.Trim().ToLower();
-            if (userMessage.StartsWith("/"))
-            {
-                await HandleCommand(bot, chatId, userMessage);
-            }
-            else // For now, if it's not a command, then it might be a answer to a question I've asked. (Can be made into a session command handler.)
-            {
-                await ProcessAnswer(bot, chatId, userMessage);
-            }
-        }
-    }
+		private static async Task ProcessAnswer(ITelegramBotClient bot, long chatId, string userMessage)
+		{
+			// HiraganaAnswer lastHiragana = connection.QueryFirstOrDefault<HiraganaAnswer>(@"SELECT id, Character FROM HiraganaAnswers WHERE TelegramId = @ChatId ORDER BY Id DESC LIMIT 1;", new { ChatId = chatId });
 
-    private static async Task ProcessAnswer(ITelegramBotClient bot, long chatId, string userMessage)
-    {
-        // HiraganaAnswer lastHiragana = connection.QueryFirstOrDefault<HiraganaAnswer>(@"SELECT id, Character FROM HiraganaAnswers WHERE TelegramId = @ChatId ORDER BY Id DESC LIMIT 1;", new { ChatId = chatId });
+			// HiraganaEntry? hiragana = HiraganaList.Find(h => h.Character == lastHiragana.Character && h.Romaji == userMessage.ToLower());
+			// if (hiragana != null)
+			// {
+			//     connection.Execute("UPDATE HiraganaAnswers SET Correct = 1 WHERE Id = @id", new { id = lastHiragana.Id });
+			//     connection.Execute("UPDATE Users SET Streak = Streak + 1 WHERE TelegramId = @ChatId;", new { ChatId = chatId });
+			//     //send the a message to the user with the correct answer possible variations and the streak
+			//     int streak = connection.QueryFirstOrDefault<int>("SELECT Streak FROM Users WHERE TelegramId = @ChatId;", new { ChatId = chatId });
+			//     string message = $"Correct! The Romaji for {hiragana.Character} is {hiragana.Romaji}.\n";
+			//     if (hiragana.Variants != null && hiragana.Variants.Count > 0)
+			//     {
+			//         message += "Variants: \n";
+			//         foreach (var variant in hiragana.Variants)
+			//         {
+			//             message += "   " + variant.Character + " is " + variant.Romaji + "\n";
+			//         }
+			//     }
+			//     message += $"Your current streak is **{streak}**.";
+			//     await bot.SendMessage(chatId, message, ParseMode.Markdown);
+			// }
+			// else
+			// {
+			//     await bot.SendMessage(chatId, "Incorrect. Please try again.");
+			// }
+		}
 
-        // HiraganaEntry? hiragana = HiraganaList.Find(h => h.Character == lastHiragana.Character && h.Romaji == userMessage.ToLower());
-        // if (hiragana != null)
-        // {
-        //     connection.Execute("UPDATE HiraganaAnswers SET Correct = 1 WHERE Id = @id", new { id = lastHiragana.Id });
-        //     connection.Execute("UPDATE Users SET Streak = Streak + 1 WHERE TelegramId = @ChatId;", new { ChatId = chatId });
-        //     //send the a message to the user with the correct answer possible variations and the streak
-        //     int streak = connection.QueryFirstOrDefault<int>("SELECT Streak FROM Users WHERE TelegramId = @ChatId;", new { ChatId = chatId });
-        //     string message = $"Correct! The Romaji for {hiragana.Character} is {hiragana.Romaji}.\n";
-        //     if (hiragana.Variants != null && hiragana.Variants.Count > 0)
-        //     {
-        //         message += "Variants: \n";
-        //         foreach (var variant in hiragana.Variants)
-        //         {
-        //             message += "   " + variant.Character + " is " + variant.Romaji + "\n";
-        //         }
-        //     }
-        //     message += $"Your current streak is **{streak}**.";
-        //     await bot.SendMessage(chatId, message, ParseMode.Markdown);
-        // }
-        // else
-        // {
-        //     await bot.SendMessage(chatId, "Incorrect. Please try again.");
-        // }
-    }
+		private static Task ErrorHandler(ITelegramBotClient bot, Exception exception, CancellationToken token)
+		{
+			Console.WriteLine("Error: " + exception.Message);
+			return Task.CompletedTask;
+		}
 
-    private static Task ErrorHandler(ITelegramBotClient bot, Exception exception, CancellationToken token)
-    {
-        Console.WriteLine("Error: " + exception.Message);
-        return Task.CompletedTask;
-    }
+		private static async Task RegisterUser(long chatId, string username)
+		{
+			DbContext.Users.Add(new Domain.Aggregates.User.User(chatId, username));
+			await DbContext.SaveChangesAsync();
+		}
 
-    private static async Task RegisterUser(long chatId, string username)
-    {
-        DbContext.Users.Add(new NihongoBot.Domain.User(chatId, username));
-        await DbContext.SaveChangesAsync();
-    }
+		private static async Task ScheduleDailyTasks()
+		{
+			_scheduler = await new StdSchedulerFactory().GetScheduler();
+			await _scheduler.Start();
 
-    private static async Task ScheduleDailyTasks()
-    {
-        Scheduler = await new StdSchedulerFactory().GetScheduler();
-        await Scheduler.Start();
+			IJobDetail job = JobBuilder.Create<HiraganaJob>().Build();
+			List<ITrigger> triggers = TriggerGenerator.GetNextTriggers(8, 21); // Generate based on last trigger time
 
-        IJobDetail job = JobBuilder.Create<HiraganaJob>().Build();
-        var triggers = TriggerGenerator.GetNextTriggers(8, 21); // Generate based on last trigger time
+			await _scheduler.ScheduleJobs(new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>> { { job, triggers } }, true);
+		}
+		private static async Task HandleCommand(ITelegramBotClient bot, long chatId, string command)
+		{
+			ChatFullInfo chat = await bot.GetChat(chatId);
+			switch (command)
+			{
+				case "/start":
+					await RegisterUser(chatId, chat.Username);
+					await bot.SendMessage(chatId, "Welcome to NihongoBot! You're now registered to receive Hiragana practice messages.");
+					break;
+				case "/streak":
+					int streak = DbContext.Users.FirstOrDefault(u => u.TelegramId == chatId)?.Streak ?? 0;
+					await bot.SendMessage(chatId, $"Your current streak is {streak}.");
+					break;
+				default:
+					await bot.SendMessage(chatId, "Command not recognized.");
+					break;
+			}
+		}
 
-        await Scheduler.ScheduleJobs(new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>>
-        {
-            { job, triggers }
-        }, true);
+		public static readonly List<BotCommand> Commands =
+		[
+				new BotCommand { Command = "start", Description = "Start interacting with NihongoBot" },
+		new BotCommand { Command = "register", Description = "Register to receive Hiragana practice messages" },
+		new BotCommand { Command = "streak", Description = "Check your current streak" },
+		];
 
-    }
-    private static async Task HandleCommand(ITelegramBotClient bot, long chatId, string command)
-    {
-        ChatFullInfo chat = await bot.GetChat(chatId);
-        switch (command)
-        {
-            case "/start":
-                await RegisterUser(chatId, chat.Username);
-                await bot.SendMessage(chatId, "Welcome to NihongoBot! You're now registered to receive Hiragana practice messages.");
-                break;
-            case "/streak":
-                int streak = DbContext.Users.FirstOrDefault(u => u.TelegramId == chatId)?.Streak ?? 0;
-                await bot.SendMessage(chatId, $"Your current streak is {streak}.");
-                break;
-            default:
-                await bot.SendMessage(chatId, "Command not recognized.");
-                break;
-        }
-    }
+		public static byte[] RenderCharacterToImage(string character)
+		{
+			int width = 250;
+			int height = 250;
+			int fontSize = 126;
+			if (character.Length > 1)
+				fontSize = 100;
 
-    public static readonly List<BotCommand> Commands =
-    [
-        new BotCommand { Command = "start", Description = "Start interacting with NihongoBot" },
-        new BotCommand { Command = "register", Description = "Register to receive Hiragana practice messages" },
-        new BotCommand { Command = "streak", Description = "Check your current streak" },
-    ];
+			using SKBitmap bitmap = new(width, height);
+			using SKCanvas canvas = new(bitmap);
+			using SKPaint paint = new()
+			{
+				Color = SKColors.Black,
+				IsAntialias = true
+			};
 
-    public static byte[] RenderCharacterToImage(string character)
-    {
-        int width = 250;
-        int height = 250;
-        int fontSize = 126;
-        if (character.Length > 1)
-            fontSize = 100;
+			string fontPath = "fonts/NotoSansJP-Regular.ttf";
+			//check if file exists
+			if (!File.Exists(fontPath))
+			{
+				Console.WriteLine("Font file not found.");
+				return [];
+			}
+			using SKTypeface typeface = SKTypeface.FromFile(fontPath);
+			using SKFont font = new()
+			{
+				Size = fontSize,
+				Typeface = typeface
+			};
 
-        using SKBitmap bitmap = new(width, height);
-        using SKCanvas canvas = new(bitmap);
-        using SKPaint paint = new()
-        {
-            Color = SKColors.Black,
-            IsAntialias = true
-        };
+			canvas.Clear(SKColors.White);
 
-        string fontPath = "fonts/NotoSansJP-Regular.ttf";
-        //check if file exists
-        if (!File.Exists(fontPath))
-        {
-            Console.WriteLine("Font file not found.");
-            return Array.Empty<byte>();
-        }
-        using SKTypeface typeface = SKTypeface.FromFile(fontPath);
-        using SKFont font = new()
-        {
-            Size = fontSize,
-            Typeface = typeface
-        };
+			// Measure the string to center it
+			SKRect textBounds = new();
+			font.MeasureText(character, out textBounds);
+			float x = (width - textBounds.Width) / 2 - 10;
+			float y = (height + textBounds.Height) / 2;
 
-        canvas.Clear(SKColors.White);
+			canvas.DrawText(character, x, y, SKTextAlign.Left, font, paint);
 
-        // Measure the string to center it
-        SKRect textBounds = new();
-        font.MeasureText(character, out textBounds);
-        float x = (width - textBounds.Width) / 2 - 10;
-        float y = (height + textBounds.Height) / 2;
-
-        canvas.DrawText(character, x, y, SKTextAlign.Left, font, paint);
-
-        using SKImage image = SKImage.FromBitmap(bitmap);
-        using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
-        return data.ToArray();
-    }
+			using SKImage image = SKImage.FromBitmap(bitmap);
+			using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
+			return data.ToArray();
+		}
+	}
 }

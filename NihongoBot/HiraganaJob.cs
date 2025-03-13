@@ -1,48 +1,45 @@
-using Telegram.Bot;
-using Quartz;
-using Telegram.Bot.Types;
+using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Enums;
-using NihongoBot.Domain.Aggregates.Hiragana;
 
-public class HiraganaJob : IJob
+using Quartz;
+
+using Telegram.Bot;
+using Telegram.Bot.Types;
+
+namespace NihongoBot
 {
-	public async Task Execute(IJobExecutionContext context)
+	public class HiraganaJob : IJob
 	{
-
-		Console.WriteLine("Sending Hiragana character...");
-
-		Random random = new();
-		Kana hiragana = Program.DbContext.Kanas
-			.Where(k => k.Type == KanaType.Hiragana)
-			.OrderBy(k => random.Next())
-			.First();
-
-		IEnumerable<long> chatIds = Program.DbContext.Users.Select(u => u.TelegramId);
-
-		foreach (long id in chatIds)
+		public async Task Execute(IJobExecutionContext context)
 		{
-			byte[] imageBytes = Program.RenderCharacterToImage(hiragana.Character);
-			using MemoryStream stream = new(imageBytes);
-			await Program.BotClient.SendPhotoAsync(id,
-				 InputFile.FromStream(stream, "hiragana.png"),
-				caption: $"What is the Romaji for this Hiragana character?");
+			Console.WriteLine("Sending Hiragana character...");
+			Random random = new();
+			Kana hiragana = Program.DbContext.Kanas
+				.Where(k => k.Type == KanaType.Hiragana)
+				.OrderBy(k => random.Next())
+				.First();
+
+			IEnumerable<long> chatIds = Program.DbContext.Users.Select(u => u.TelegramId);
+
+			foreach (long id in chatIds)
+			{
+				byte[] imageBytes = Program.RenderCharacterToImage(hiragana.Character);
+				using MemoryStream stream = new(imageBytes);
+				await Program._botClient.SendPhoto(id, InputFile.FromStream(stream, "hiragana.png"), caption: $"What is the Romaji for this Hiragana character?");
+			}
+			await RescheduleNextTriggersAsync(context.Scheduler);
+
 		}
-		await RescheduleNextTriggersAsync(context.Scheduler);
 
-	}
-
-	private static async Task RescheduleNextTriggersAsync(IScheduler scheduler)
-	{
-		var triggers = TriggerGenerator.GetNextTriggers(10, 21); // Generate new triggers
-
-		IJobDetail job = JobBuilder.Create<HiraganaJob>()
-			.Build();
-
-		await scheduler.ScheduleJobs(new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>>
+		private static async Task RescheduleNextTriggersAsync(IScheduler scheduler)
 		{
-			{ job, triggers }
-		}, true);
+			List<ITrigger> triggers = TriggerGenerator.GetNextTriggers(10, 21); // Generate new triggers
 
-		Console.WriteLine("New random triggers scheduled.");
+			IJobDetail job = JobBuilder.Create<HiraganaJob>()
+				.Build();
+
+			await scheduler.ScheduleJobs(new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>> { { job, triggers } }, true);
+			Console.WriteLine("New random triggers scheduled.");
+		}
 	}
 }
