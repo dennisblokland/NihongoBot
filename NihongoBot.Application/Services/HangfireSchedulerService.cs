@@ -102,7 +102,7 @@ public class HangfireSchedulerService : IHostedService
 
 			_recurringJobManager.AddOrUpdate<HiraganaService>(
 				jobId,
-				service => service.SendHiraganaMessage(user.TelegramId),
+				service => service.SendHiraganaMessage(user.TelegramId, user.Id),
 				Cron.Yearly(scheduledDateTime.Month, scheduledDateTime.Day, scheduledDateTime.Hour, scheduledDateTime.Minute)
 			);
 		}

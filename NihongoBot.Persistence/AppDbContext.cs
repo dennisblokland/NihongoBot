@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using NihongoBot.Domain;
 using NihongoBot.Domain.Aggregates.Hiragana;
 using NihongoBot.Domain.Base;
+using NihongoBot.Domain.Entities;
 
 namespace NihongoBot.Persistence;
 
@@ -15,6 +16,8 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
 
     public DbSet<Kana> Kanas { get; set; }
+
+	public DbSet<Question> Questions { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

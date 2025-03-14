@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Helpers;
 using NihongoBot.Domain.Aggregates.Hiragana;
+using NihongoBot.Domain.Entities;
+using NihongoBot.Domain.Enums;
 using NihongoBot.Persistence;
 
 using Telegram.Bot;
@@ -23,7 +25,7 @@ public class HiraganaService
 		_dbContext = dbContext;
 	}
 
-	public async Task SendHiraganaMessage(long telegramId)
+	public async Task SendHiraganaMessage(long telegramId, Guid userId)
 	{
 		_logger.LogInformation("Sending Hiragana message at {Time}", DateTime.Now);
 
@@ -39,5 +41,18 @@ public class HiraganaService
 		await _botClient.SendPhoto(telegramId,
 		InputFile.FromStream(stream, "hiragana.png"),
 		caption: $"What is the Romaji for this {hiragana.Key.Character} Hiragana character?");
+
+		//save the Question to the database
+		Question question = new()
+		{
+			UserId = userId,
+			QuestionType = QuestionType.Hiragana,
+			QuestionText = hiragana.Key.Character,
+			CorrectAnswer = hiragana.Key.Romaji,
+			SentAt = DateTime.UtcNow,
+		};
+
+		_dbContext.Questions.Add(question);
+		await _dbContext.SaveChangesAsync();
 	}
 }

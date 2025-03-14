@@ -32,10 +32,7 @@ namespace NihongoBot.Persistence.Configurations
                 variant.Property(v => v.Character).IsRequired().HasMaxLength(2);
                 variant.Property(v => v.Romaji).IsRequired().HasMaxLength(5);
                 variant.HasData(kanaVariants);
-            }
-            );
-
-
+            });
         }
 
         private List<Kana> LoadKanaData()
