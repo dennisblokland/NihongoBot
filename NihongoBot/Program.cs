@@ -5,6 +5,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using NihongoBot.Application.Services;
 using NihongoBot.Persistence;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 class Program
 {
@@ -25,10 +27,13 @@ class Program
                 .AddEnvironmentVariables()
                 .Build();
 
-            string connectionString = config.GetConnectionString("NihongoBot");
+            string connectionString = config.GetConnectionString("NihongoBotDB");
 
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(connectionString));
+
+      		 services.AddHangfire(config => config
+                    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
 
 
             services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(config["TelegramBotToken"]));

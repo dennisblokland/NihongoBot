@@ -1,22 +1,14 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "C#: NihongoBot.Server Debug",
-            "type": "dotnet",
-            "request": "launch",
-            "projectPath": "${workspaceFolder}/NihongoBot.Server/NihongoBot.Server.csproj"
-        },
-        {
-            "name": "C#: NihongoBot",
-            "type": "dotnet",
-            "request": "launch",
-            "projectPath": "${workspaceFolder}\\NihongoBot\\NihongoBot.csproj",
-            "launchConfigurationId": "TargetFramework=;NihongoBot",
-        }
-
-    ]
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug Aspire",
+			"type": "dotnet",
+			"request": "launch",
+			"projectPath": "${workspaceFolder}/NihongoBot.AppHost/NihongoBot.AppHost.csproj",
+		}
+	]
 }

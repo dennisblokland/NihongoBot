@@ -1,6 +1,3 @@
-using Hangfire;
-using Hangfire.Processing;
-
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Persistence;
