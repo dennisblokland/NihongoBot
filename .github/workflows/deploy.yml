@@ -1,0 +1,14 @@
+name: Deploy NihongoBot
+
+on:
+    push:
+        branches:
+            - main  # Trigger on push to main
+    workflow_dispatch:
+
+jobs:
+    deploy:
+        runs-on: self-hosted        
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
