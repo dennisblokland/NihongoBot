@@ -20,5 +20,9 @@
   <ItemGroup>
     <ProjectReference Include="..\NihongoBot.Domain\NihongoBot.Domain.csproj" />
   </ItemGroup>
-
+  <ItemGroup>
+  <None Update="hiragana.json">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
 </Project>

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json.schemastore.org/aspire-8.0.json",
+  "resources": {
+    "Postgres": {
+      "type": "container.v0",
+      "connectionString": "Host={Postgres.bindings.tcp.host};Port={Postgres.bindings.tcp.port};Username=postgres;Password={Postgres-password.value}",
+      "image": "docker.io/library/postgres:17.2",
+      "volumes": [
+        {
+          "name": "nihongobot.apphost-911f0b78b9-Postgres-data",
+          "target": "/var/lib/postgresql/data",
+          "readOnly": false
+        }
+      ],
+      "env": {
+        "POSTGRES_HOST_AUTH_METHOD": "scram-sha-256",
+        "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256 --auth-local=scram-sha-256",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "{Postgres-password.value}"
+      },
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 5432
+        }
+      }
+    },
+    "NihongoBotDB": {
+      "type": "value.v0",
+      "connectionString": "{Postgres.connectionString};Database=NihongoBotDB"
+    },
+    "NihongoBotServer": {
+      "type": "project.v0",
+      "path": "../NihongoBot.Server/NihongoBot.Server.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{NihongoBotServer.bindings.http.targetPort}",
+        "ConnectionStrings__NihongoBotDB": "{NihongoBotDB.connectionString}"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        }
+      }
+    },
+    "NihongoBot": {
+      "type": "project.v0",
+      "path": "../NihongoBot/NihongoBot.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ConnectionStrings__NihongoBotDB": "{NihongoBotDB.connectionString}"
+      }
+    },
+    "Postgres-password": {
+      "type": "parameter.v0",
+      "value": "{Postgres-password.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true,
+          "default": {
+            "generate": {
+              "minLength": 22
+            }
+          }
+        }
+      }
+    }
+  }
+}

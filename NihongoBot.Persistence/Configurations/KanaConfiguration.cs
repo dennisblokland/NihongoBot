@@ -4,8 +4,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NihongoBot.Domain.Aggregates.Hiragana;
 using NihongoBot.Domain.Enums;
 
-using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
 
 namespace NihongoBot.Persistence.Configurations
@@ -34,22 +32,21 @@ namespace NihongoBot.Persistence.Configurations
                 variant.Property(v => v.Character).IsRequired().HasMaxLength(2);
                 variant.Property(v => v.Romaji).IsRequired().HasMaxLength(5);
                 variant.HasData(kanaVariants);
-            }
-            );
-
-
+            });
         }
 
         private List<Kana> LoadKanaData()
         {
             string jsonFilePath = "hiragana.json";
-            if (!File.Exists(jsonFilePath))
+			string fulljsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, jsonFilePath);
+
+            if (!File.Exists(fulljsonFilePath))
             {
-                Console.WriteLine($"Error: File '{jsonFilePath}' not found.");
-                return new List<Kana>();
+                Console.WriteLine($"Error: File '{fulljsonFilePath}' not found.");
+                return [];
             }
 
-            string jsonData = File.ReadAllText(jsonFilePath);
+            string jsonData = File.ReadAllText(fulljsonFilePath);
             List<Kana>? kanaList = JsonSerializer.Deserialize<List<Kana>>(jsonData, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
