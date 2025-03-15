@@ -1,4 +1,13 @@
 services:
+  aspire-dashboard:
+    container_name: "aspire-dashboard"
+    image: "mcr.microsoft.com/dotnet/aspire-dashboard:9.0"
+    environment:
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+    - target: 18888
+      published: 18888
+    restart: unless-stopped
   Postgres:
     container_name: "Postgres"
     image: "docker.io/library/postgres:17.2"
@@ -6,7 +15,9 @@ services:
       POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
       POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "evMpFiQ8Al2vMNSVQOedG6"
+      POSTGRES_PASSWORD: "TlW3tghGlpiLUKiafZuDHb"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
+      OTEL_SERVICE_NAME: "Postgres"
     volumes:
     - "nihongobot-apphost-911f0b78b9-postgres-data:/var/lib/postgresql/data"
     ports:
@@ -22,7 +33,9 @@ services:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       HTTP_PORTS: "8080"
-      ConnectionStrings__NihongoBotDB: "Host=Postgres;Port=5432;Username=postgres;Password=evMpFiQ8Al2vMNSVQOedG6;Database=NihongoBotDB"
+      ConnectionStrings__NihongoBotDB: "Host=Postgres;Port=5432;Username=postgres;Password=TlW3tghGlpiLUKiafZuDHb;Database=NihongoBotDB"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
+      OTEL_SERVICE_NAME: "NihongoBotServer"
     ports:
     - target: 8080
       published: 10000
@@ -36,7 +49,9 @@ services:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
-      ConnectionStrings__NihongoBotDB: "Host=Postgres;Port=5432;Username=postgres;Password=evMpFiQ8Al2vMNSVQOedG6;Database=NihongoBotDB"
+      ConnectionStrings__NihongoBotDB: "Host=Postgres;Port=5432;Username=postgres;Password=TlW3tghGlpiLUKiafZuDHb;Database=NihongoBotDB"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
+      OTEL_SERVICE_NAME: "NihongoBot"
     restart: unless-stopped
 volumes:
   nihongobot-apphost-911f0b78b9-postgres-data: {}
