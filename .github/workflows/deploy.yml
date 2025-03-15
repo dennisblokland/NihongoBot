@@ -32,7 +32,7 @@ jobs:
           run: dotnet publish -c Release -t:PublishContainer --nologo -r "linux-x64" -p:ContainerRepository="nihongobot" -p:ContainerImageTag="latest"
 
         - name: Copy Docker Compose File
-          run: cp docker-compose.yml /home/dennis/nihongoBot
+          run: cp $GITHUB_WORKSPACE/docker-compose.yml /home/dennis/nihongoBot
 
         - name: Restart NihongoBot Container
           run: |
