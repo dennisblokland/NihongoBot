@@ -24,12 +24,12 @@ jobs:
               files: '*/appsettings.json'
           env:
               TelegramBotToken: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-              
+
         - name: Build the Project
           run: dotnet build
 
         - name: Publish the Project
-          run: dotnet publish -c Release -t:PublishContainer --nologo -r "linux-x64
+          run: dotnet publish -c Release -t:PublishContainer --nologo -r "linux-x64" -p:ContainerRepository="nihongobot" -p:ContainerImageTag="latest"
 
         - name: Copy Docker Compose File
           run: cp docker-compose.yml /home/dennis/nihongoBot
