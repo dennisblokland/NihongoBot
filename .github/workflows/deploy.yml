@@ -26,7 +26,7 @@ jobs:
           run: dotnet build
 
         - name: Generate Docker Compose File
-          run: aspirate generate --output-format compose --disable-secrets --non-interactive --include-dashboard --project NihongoBot.AppHost
+          run: aspirate generate --output-format compose --disable-secrets --non-interactive --include-dashboard --project-path NihongoBot.AppHost
 
         - name: Copy Docker Compose File
           run: cp docker-compose.yml /home/dennis/nihongoBot
