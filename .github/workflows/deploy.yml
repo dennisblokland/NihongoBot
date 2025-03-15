@@ -1,0 +1,41 @@
+name: Deploy NihongoBot
+
+on:
+    push:
+        branches:
+            - main  # Trigger on push to main
+
+jobs:
+    deploy:
+        runs-on: self-hosted
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: 9.0.x
+
+        - name: Install Aspirate Tool
+          run: dotnet tool install -g aspirate --prerelease
+
+        - name: Build the Project
+          run: dotnet build
+
+        # go to the Apphost project directory
+        - name: Change Directory
+          run: cd NihongoBot.AppHost
+
+        - name: Generate Docker Compose File
+          run: aspirate generate --output-format compose --disable-secrets --non-interactive
+
+        - name: Copy Docker Compose File
+          run: cp docker-compose.yml /home/dennis/nihongoBot
+
+        - name: Restart NihongoBot Container
+          run: |
+                cd /home/dennis/nihongoBot
+                docker compose down
+                docker compose up -d
