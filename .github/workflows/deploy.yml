@@ -18,15 +18,18 @@ jobs:
           uses: actions/setup-dotnet@v4
           with:
             dotnet-version: 9.0.x
-
-        - name: Install Aspirate Tool
-          run: dotnet tool install -g aspirate --prerelease
-
+        - name: Replace Variables in appsettings.json
+          uses: microsoft/variable-substitution@v1
+          with:
+              files: '*/appsettings.json'
+          env:
+              TelegramBotToken: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+              
         - name: Build the Project
           run: dotnet build
 
-        - name: Generate Docker Compose File
-          run: aspirate generate --output-format compose --disable-secrets --non-interactive --include-dashboard --project-path NihongoBot.AppHost -m $GITHUB_WORKSPACE/manifest.json
+        - name: Publish the Project
+          run: dotnet publish -c Release -t:PublishContainer --nologo -r "linux-x64
 
         - name: Copy Docker Compose File
           run: cp docker-compose.yml /home/dennis/nihongoBot
