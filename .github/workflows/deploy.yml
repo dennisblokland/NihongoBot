@@ -37,7 +37,7 @@ jobs:
           run: aspirate generate --output-format compose --disable-secrets --non-interactive --include-dashboard
 
         - name: Copy Docker Compose File
-          run: cp $GITHUB_WORKSPACE/NihongoBot.AppHost/aspirate-output/docker-compose.yml /home/dennis/nihongoBot
+          run: cp $GITHUB_WORKSPACE/NihongoBot.AppHost/aspirate-output/docker-compose.yaml /home/dennis/nihongoBot
 
         - name: Restart NihongoBot Container
           run: |
