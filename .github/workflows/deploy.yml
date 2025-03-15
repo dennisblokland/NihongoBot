@@ -18,7 +18,7 @@ jobs:
           uses: actions/setup-dotnet@v4
           with:
             dotnet-version: 9.0.x
-            
+
         - name: Install Aspirate Tool
           run: dotnet tool install -g aspirate --prerelease
 
@@ -33,11 +33,11 @@ jobs:
           run: dotnet build
 
         - name: Publish the Project
-          working-directory: nihongoBot.AppHost
+          working-directory: NihongoBot.AppHost
           run: aspirate generate --output-format compose --disable-secrets --non-interactive --include-dashboard
 
         - name: Copy Docker Compose File
-          run: cp $GITHUB_WORKSPACE/nihongoBot.AppHost/aspirate-output/docker-compose.yml /home/dennis/nihongoBot
+          run: cp $GITHUB_WORKSPACE/NihongoBot.AppHost/aspirate-output/docker-compose.yml /home/dennis/nihongoBot
 
         - name: Restart NihongoBot Container
           run: |
