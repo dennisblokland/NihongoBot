@@ -30,7 +30,7 @@ jobs:
           run: cd NihongoBot.AppHost
 
         - name: Generate Docker Compose File
-          run: aspirate generate --output-format compose --disable-secrets --non-interactive -m manifest.json --include-dashboard
+          run: aspirate generate --output-format compose --disable-secrets --non-interactive --include-dashboard
 
         - name: Copy Docker Compose File
           run: cp docker-compose.yml /home/dennis/nihongoBot
