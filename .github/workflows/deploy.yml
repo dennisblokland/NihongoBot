@@ -41,7 +41,7 @@ jobs:
 
         - name:  Generate Compose File
           working-directory: NihongoBot.AppHost
-          run: aspirate generate --output-format compose --disable-secrets --non-interactive --include-dashboard --skip-build
+          run: aspirate generate --output-format compose --non-interactive --include-dashboard --skip-build
 
         - name: Copy Docker Compose File
           run: cp $GITHUB_WORKSPACE/NihongoBot.AppHost/aspirate-output/docker-compose.yaml /home/dennis/nihongoBot

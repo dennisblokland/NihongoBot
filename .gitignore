@@ -137,3 +137,4 @@ appsettings.development.json
 .vs
 NihongoBot.AppHost/manifest.json
 NihongoBot.AppHost/aspirate-output
+NihongoBot.AppHost/aspirate-output/docker-compose.yaml
