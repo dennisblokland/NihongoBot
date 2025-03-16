@@ -4,7 +4,10 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-      <ContainerRepository>nihongobot</ContainerRepository>
+    <ContainerRepository>nihongobot</ContainerRepository>
+    <ContainerImageTag>latest</ContainerImageTag>
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/runtime:9.0</ContainerBaseImage>
+    <DockerfileFile>../ClientDockerfile</DockerfileFile>
   </PropertyGroup>
 
   <ItemGroup>
