@@ -32,16 +32,9 @@ jobs:
         - name: Build the Project
           run: dotnet build
 
-        - name: publish Server
-          working-directory: NihongoBot.Server
-          run: dotnet publish -t:PublishContainer -r linux-x64 -p:ContainerRepository="NihongoBotServer" -p:ContainerImageTag="latest"        
-
-        - name: publish Bot
-          run: docker build -t nihongobot .
-
         - name:  Generate Compose File
           working-directory: NihongoBot.AppHost
-          run: aspirate generate --output-format compose --non-interactive --include-dashboard --skip-build --secret-password ${{ secrets.ASPIRATE_SECRET_PASSWORD }}
+          run: aspirate generate --output-format compose --non-interactive --include-dashboard --secret-password ${{ secrets.ASPIRATE_SECRET_PASSWORD }}
 
         - name: Copy Docker Compose File
           run: cp $GITHUB_WORKSPACE/NihongoBot.AppHost/aspirate-output/docker-compose.yaml /home/dennis/nihongoBot
