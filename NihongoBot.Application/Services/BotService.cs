@@ -144,15 +144,16 @@ public class BotService
 				return;
 			}
 
-			string message = $"Correct! The Romaji for {question.QuestionText} is {question.CorrectAnswer}.\nYour current streak is **{user.Streak}**.";
+			string message = $"Correct! The Romaji for {question.QuestionText} is {question.CorrectAnswer}.";
 			if (kana.Variants != null && kana.Variants.Count > 0)
 			{
-				message += "Variants: \n";
+				message += "\nVariants: \n";
 				foreach (var variant in kana.Variants)
 				{
 					message += "   " + variant.Character + " is " + variant.Romaji + "\n";
 				}
 			}
+			message += "\n\nYour current streak is **{user.Streak}**.";
 			await _botClient.SendMessage(chatId,
 				message,
 				ParseMode.Markdown, cancellationToken: cancellationToken);
