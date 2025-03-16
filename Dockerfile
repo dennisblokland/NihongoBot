@@ -1,5 +1,5 @@
 # Use the official .NET 9 runtime as the base image
-FROM mcr.microsoft.com/dotnet/runtime:9.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
 # Install required Linux dependencies for SkiaSharp
 RUN apt-get update && apt-get install -y \
