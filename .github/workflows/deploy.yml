@@ -33,7 +33,7 @@ jobs:
           run: dotnet build
 
         - name: publish Server
-          working-directory: NihongoBot.Sever
+          working-directory: NihongoBot.Server
           run: dotnet publish -t:PublishContainer -r linux-x64 -p:ContainerRepository="NihongoBot" -p:ContainerImageTag="latest"        
 
         - name: publish Bot
