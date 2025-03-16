@@ -1,4 +1,5 @@
 using Hangfire;
+using Hangfire.Dashboard.BasicAuthorization;
 using Hangfire.PostgreSql;
 
 using Microsoft.EntityFrameworkCore;
@@ -49,5 +50,24 @@ var app = builder.Build();
 app.MapGet("/", () => "Hello World!");
 
 
-app.UseHangfireDashboard();
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+	Authorization =
+	[
+		new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
+		{
+			RequireSsl = false,
+			SslRedirect = false,
+			LoginCaseSensitive = false,
+			Users =
+			[
+				new BasicAuthAuthorizationUser
+				{
+					Login = "admin",
+					PasswordClear = "admin",
+				},
+			],
+		}),
+	],
+});
 app.Run();
