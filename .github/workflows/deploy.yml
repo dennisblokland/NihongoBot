@@ -34,7 +34,7 @@ jobs:
 
         - name: publish Server
           working-directory: NihongoBot.Server
-          run: dotnet publish -t:PublishContainer -r linux-x64 -p:ContainerRepository="NihongoBot" -p:ContainerImageTag="latest"        
+          run: dotnet publish -t:PublishContainer -r linux-x64 -p:ContainerRepository="NihongoBotServer" -p:ContainerImageTag="latest"        
 
         - name: publish Bot
           run: docker build -t nihongobot .
