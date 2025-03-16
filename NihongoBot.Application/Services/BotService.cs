@@ -153,7 +153,7 @@ public class BotService
 					message += "   " + variant.Character + " is " + variant.Romaji + "\n";
 				}
 			}
-			message += "\n\nYour current streak is **{user.Streak}**.";
+			message += $"\n\nYour current streak is **{user.Streak}**.";
 			await _botClient.SendMessage(chatId,
 				message,
 				ParseMode.Markdown, cancellationToken: cancellationToken);
