@@ -135,3 +135,6 @@ _NCrunch*
 appsettings.development.json
 .azuredevops
 .vs
+NihongoBot.AppHost/manifest.json
+NihongoBot.AppHost/aspirate-output
+NihongoBot.AppHost/aspirate-output/docker-compose.yaml

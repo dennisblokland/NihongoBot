@@ -13,5 +13,15 @@ namespace NihongoBot.Domain
         public string? Username { get; private set; }
 
         public int Streak { get; private set; } = 0;
+
+		public void IncreaseStreak()
+		{
+			Streak++;
+		}
+
+		public void ResetStreak()
+		{
+			Streak = 0;
+		}
     }
 }

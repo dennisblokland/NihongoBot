@@ -1,0 +1,31 @@
+{
+  "projectPath": ".",
+  "outputPath": "aspirate-output",
+  "containerImageTags": [
+    "latest"
+  ],
+  "containerBuilder": "docker",
+  "outputFormat": "compose",
+  "privateRegistryEmail": "aspir8@aka.ms",
+  "includeDashboard": true,
+  "secrets": {
+    "salt": "oOcmWq\u002BR8dazHGfB",
+    "hash": "oojjyJnA50EW\u002BIY2WNNgt2eBRq12DMC9kywZBs60IlA=",
+    "secrets": {
+      "Postgres-password": {
+        "value": "oOcmWq\u002BR8dazHGfB7cmcZlYgu9SwWxWPvrzZEuRKkFLMHQGgnKQV4zJM1ICGl3fZ0WI="
+      },
+      "Postgres": {
+        "POSTGRES_PASSWORD": "oOcmWq\u002BR8dazHGfB7cmcZlYgu9SwWxWPvrzZEuRKkFLMHQGgnKQV4zJM1ICGl3fZ0WI="
+      },
+      "NihongoBotDB": {},
+      "NihongoBotServer": {
+        "ConnectionStrings__NihongoBotDB": "oOcmWq\u002BR8dazHGfB//OBirkuOMLoRLddkQHI65RCiGmeJgiGgIImxzgSybWQkgCGiDywupqIjCuURMuIEL7w98YjYY\u002BX4hffKRdl33xmuAlSnhStxIoi6RFEhM6MXPowmefSEvoBdMfzHDHhiTwI829MLJS8PsOURXP1"
+      },
+      "NihongoBot": {
+        "ConnectionStrings__NihongoBotDB": "oOcmWq\u002BR8dazHGfB//OBirkuOMLoRLddkQHI65RCiGmeJgiGgIImxzgSybWQkgCGiDywupqIjCuURMuIEL7w98YjYY\u002BX4hffKRdl33xmuAlSnhStxIoi6RFEhM6MXPowmefSEvoBdMfzHDHhiTwI829MLJS8PsOURXP1"
+      }
+    }
+  },
+  "processAllComponents": true
+}

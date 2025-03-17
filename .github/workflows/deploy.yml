@@ -8,7 +8,39 @@ on:
 
 jobs:
     deploy:
-        runs-on: self-hosted        
+        runs-on: self-hosted
+
         steps:
         - name: Checkout repository
           uses: actions/checkout@v4
+
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: 9.0.x
+
+        - name: Install Aspirate Tool
+          run: dotnet tool install -g aspirate --prerelease
+
+        - name: Replace Variables in appsettings.json
+          uses: microsoft/variable-substitution@v1
+          with:
+              files: '*/appsettings.json'
+          env:
+              TelegramBotToken: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+        - name: Build the Project
+          run: dotnet build
+
+        - name:  Generate Compose File
+          working-directory: NihongoBot.AppHost
+          run: aspirate generate --output-format compose --non-interactive --include-dashboard --secret-password ${{ secrets.ASPIRATE_SECRET_PASSWORD }}
+
+        - name: Copy Docker Compose File
+          run: cp $GITHUB_WORKSPACE/NihongoBot.AppHost/aspirate-output/docker-compose.yaml /home/dennis/nihongoBot
+
+        - name: Restart NihongoBot Container
+          run: |
+                cd /home/dennis/nihongoBot
+                docker compose down
+                docker compose up -d
