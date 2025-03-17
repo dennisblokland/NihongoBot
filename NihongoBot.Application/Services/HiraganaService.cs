@@ -50,6 +50,7 @@ public class HiraganaService
 			QuestionText = hiragana.Key.Character,
 			CorrectAnswer = hiragana.Key.Romaji,
 			SentAt = DateTime.UtcNow,
+			TimeLimit = 5 // Set the time limit to 5 minutes
 		};
 
 		_dbContext.Questions.Add(question);

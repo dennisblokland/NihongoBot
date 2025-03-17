@@ -40,6 +40,13 @@ public class HangfireSchedulerService : IHostedService
 			Cron.Daily(0, 0)
 		);
 
+		// Schedule a job to check for expired questions every minute
+		_recurringJobManager.AddOrUpdate(
+			"CheckExpiredQuestions",
+			() => CheckExpiredQuestions(),
+			Cron.Minutely
+		);
+
 		_logger.LogInformation("Hiragana jobs scheduled successfully.");
 		return Task.CompletedTask;
 	}
@@ -108,6 +115,28 @@ public class HangfireSchedulerService : IHostedService
 		}
 
 	}
+
+	public async Task CheckExpiredQuestions()
+	{
+		DateTime now = DateTime.UtcNow;
+		List<Question> expiredQuestions = _dbContext.Questions
+			.Where(q => !q.IsAnswered && !q.IsExpired && q.SentAt.AddMinutes(q.TimeLimit) <= now)
+			.ToList();
+
+		foreach (Question question in expiredQuestions)
+		{
+			question.IsExpired = true;
+			Domain.User? user = _dbContext.Users.FirstOrDefault(u => u.Id == question.UserId);
+			if (user != null)
+			{
+				user.ResetStreak();
+				await _botClient.SendMessage(user.TelegramId, $"Time's up! The correct answer was {question.CorrectAnswer}.");
+			}
+		}
+
+		await _dbContext.SaveChangesAsync();
+	}
+
 	public Task StopAsync(CancellationToken cancellationToken)
 	{
 		_logger.LogInformation("Hangfire Scheduler stopping...");

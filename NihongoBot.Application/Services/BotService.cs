@@ -176,6 +176,28 @@ public class BotService
 			await _botClient.SendMessage(chatId, "Incorrect. Please try again.", cancellationToken: cancellationToken);
 		}
 	}
+
+	private async Task CheckExpiredQuestions(CancellationToken cancellationToken)
+	{
+		DateTime now = DateTime.UtcNow;
+		List<Question> expiredQuestions = _dbContext.Questions
+			.Where(q => !q.IsAnswered && !q.IsExpired && q.SentAt.AddMinutes(q.TimeLimit) <= now)
+			.ToList();
+
+		foreach (Question question in expiredQuestions)
+		{
+			question.IsExpired = true;
+			Domain.User? user = _dbContext.Users.FirstOrDefault(u => u.Id == question.UserId);
+			if (user != null)
+			{
+				user.ResetStreak();
+				await _botClient.SendMessage(user.TelegramId, $"Time's up! The correct answer was {question.CorrectAnswer}.", cancellationToken: cancellationToken);
+			}
+		}
+
+		await _dbContext.SaveChangesAsync(cancellationToken);
+	}
+
 	public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 	{
 		var errorMessage = exception switch
