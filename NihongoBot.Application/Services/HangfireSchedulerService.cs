@@ -65,7 +65,7 @@ public class HangfireSchedulerService : IHostedService
 			currentJobs = storage.GetRecurringJobs().Where(j => j.Id.Contains("SendHiragana_") && j.Id.Contains(user.Id.ToString())).ToList();
 			if (currentJobs.Count > jobCount)
 			{
-				// Remove the all jobs
+				// Remove all jobs
 				foreach (RecurringJobDto job in currentJobs)
 				{
 					_recurringJobManager.RemoveIfExists(job.Id);
