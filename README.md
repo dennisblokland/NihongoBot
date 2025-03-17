@@ -1,16 +1,14 @@
 # NihongoBot
+NihongoBot is a Telegram bot written in C# to help users learn Hiragana. You can interact with the bot at https://t.me/DennisNihongoBot.
 
-NihongoBot is a Telegram bot written in C# to help users learn Hiragana.
+# Features
+**Learn Hiragana characters**: The bot provides interactive lessons to help you master Hiragana.
 
-## Features
+**Streak tracking**: Keep track of your progress and maintain a streak to stay motivated.
 
-- Learn Hiragana characters
-- streak tracking
-
-## Prerequisites
-
-- [.NET Core 9.0 SDK](https://dotnet.microsoft.com/download)
-- A valid Telegram Bot Token
+# Prerequisites
+* .NET Core 9.0 SDK: Download from https://dotnet.microsoft.com/download.
+* A valid Telegram Bot Token: Required for running the bot.
 
 ## Running Locally
 
