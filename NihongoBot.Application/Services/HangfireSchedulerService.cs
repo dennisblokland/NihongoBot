@@ -7,7 +7,10 @@ using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Helpers;
 using NihongoBot.Domain;
+using NihongoBot.Domain.Entities;
 using NihongoBot.Persistence;
+
+using Telegram.Bot;
 
 namespace NihongoBot.Application.Services;
 
@@ -15,15 +18,18 @@ public class HangfireSchedulerService : IHostedService
 {
 	private readonly ILogger<HangfireSchedulerService> _logger;
 	private readonly IRecurringJobManager _recurringJobManager;
+	private readonly ITelegramBotClient _botClient;
 	private readonly AppDbContext _dbContext;
 
 	public HangfireSchedulerService(
 		ILogger<HangfireSchedulerService> logger,
 		 IRecurringJobManager recurringJobManager,
-		 IServiceScopeFactory serviceScopeFactory)
+		 IServiceScopeFactory serviceScopeFactory,
+		 ITelegramBotClient botClient)
 	{
 		_logger = logger;
 		_recurringJobManager = recurringJobManager;
+		_botClient = botClient;
 		_dbContext = serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<AppDbContext>();
 	}
 
@@ -93,7 +99,7 @@ public class HangfireSchedulerService : IHostedService
 		{
 			string jobId = $"SendHiragana_{i + 1}_{user.Id}";
 
-			if (currentJobs.Any(j => j.Id == jobId && j.NextExecution > DateTime.UtcNow  && j.NextExecution.HasValue && j.NextExecution.Value < DateTime.UtcNow.AddHours(24)))
+			if (currentJobs.Any(j => j.Id == jobId && j.NextExecution > DateTime.UtcNow && j.NextExecution.HasValue && j.NextExecution.Value < DateTime.UtcNow.AddHours(24)))
 			{
 				continue;
 			}
@@ -126,11 +132,15 @@ public class HangfireSchedulerService : IHostedService
 		foreach (Question question in expiredQuestions)
 		{
 			question.IsExpired = true;
-			Domain.User? user = _dbContext.Users.FirstOrDefault(u => u.Id == question.UserId);
+			User? user = _dbContext.Users.FirstOrDefault(u => u.Id == question.UserId);
 			if (user != null)
 			{
 				user.ResetStreak();
-				await _botClient.SendMessage(user.TelegramId, $"Time's up! The correct answer was {question.CorrectAnswer}.");
+				// reply to the original message with the correct answer
+				await _botClient.SendMessage(user.TelegramId,
+				"You've reached the time limit. The correct answer was " + question.CorrectAnswer,
+				replyParameters: question.MessageId);
+
 			}
 		}
 

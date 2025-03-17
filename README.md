@@ -20,33 +20,47 @@ NihongoBot is a Telegram bot written in C# to help users learn Hiragana.
     cd NihongoBot
     ```
 
-2. Restore dependencies:
+2. Restore dependencies for all projects:
     ```sh
     dotnet restore
     ```
 
-3. Create an `appsettings.Development.json` file in the root directory with the following content:
+3. Create an `appsettings.Development.json` file in the `NihongoBot.Server` and  `NihongoBot` directory with the following content:
     ```json
     {
         "TelegramBotToken": "YOUR_TELEGRAM_BOT_TOKEN"
     }
     ```
 
-4. Run the application:
+4. Navigate to the `NihongoBot.AppHost` directory:
+    ```sh
+    cd NihongoBot.AppHost
+    ```
+
+5. Run the application:
     ```sh
     dotnet run
     ```
 
-## Running with Docker
+## Migrations
 
-1. Build the Docker image:
+To apply database migrations, follow these steps:
+
+1. Navigate to the `NihongoBot.Persistence` directory:
     ```sh
-    docker build -t nihongobot .
+    cd NihongoBot.Persistence
     ```
 
-2. Run the Docker container:
+2. Add a new migration (if needed):
     ```sh
-    docker run -e TelegramBotToken=YOUR_TELEGRAM_BOT_TOKEN nihongobot
+    dotnet ef migrations add <MigrationName>
+    ```
+
+3. Apply the migrations By starting the app.
+
+4. To remove migrations run the following command:
+    ```sh
+    dotnet ef migrations remove --force
     ```
 
 ## Usage

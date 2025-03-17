@@ -38,7 +38,7 @@ public class HiraganaService
 		//take random hiragana character from the list
 		KeyValuePair<Kana, byte[]> hiragana = renderedKana.OrderBy(h => Guid.NewGuid()).First();
 		Stream stream = new MemoryStream(hiragana.Value);
-		await _botClient.SendPhoto(telegramId,
+		Message message = await _botClient.SendPhoto(telegramId,
 		InputFile.FromStream(stream, "hiragana.png"),
 		caption: $"What is the Romaji for this {hiragana.Key.Character} Hiragana character?");
 
@@ -50,6 +50,7 @@ public class HiraganaService
 			QuestionText = hiragana.Key.Character,
 			CorrectAnswer = hiragana.Key.Romaji,
 			SentAt = DateTime.UtcNow,
+			MessageId = message.MessageId,
 			TimeLimit = 5 // Set the time limit to 5 minutes
 		};
 
