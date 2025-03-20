@@ -103,10 +103,10 @@ public class HangfireSchedulerServiceTest
 	public async Task CheckExpiredQuestions_ShouldMarkQuestionsAsExpiredAndNotifyUsers()
 	{
 		// Arrange
-		List<Question> expiredQuestions = new List<Question>
-		{
+		List<Question> expiredQuestions =
+		[
 			_fixture.Create<Question>(),
-		};
+		];
 
 		User user = _fixture.Build<User>().With(x => x.Id, expiredQuestions[0].UserId).Create();
 
@@ -133,7 +133,7 @@ public class HangfireSchedulerServiceTest
 				It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new Message());
 
-		_dbContextMock.Verify(context => context.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		_questionRepositoryMock.Verify(context => context.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]

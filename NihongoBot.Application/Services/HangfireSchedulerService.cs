@@ -147,6 +147,6 @@ public class HangfireSchedulerService
 			}
 		}
 
-		await _userRepository.SaveChangesAsync(cancellationToken);
+		await _questionRepository.SaveChangesAsync(cancellationToken);
 	}
 }
