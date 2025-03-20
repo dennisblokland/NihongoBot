@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Domain.Aggregates.Hiragana;
@@ -50,7 +51,7 @@ public class BotService
 	private async Task HandleCommand(long chatId, string command, CancellationToken cancellationToken)
 	{
 		ChatFullInfo chat = await _botClient.GetChat(chatId);
-		Domain.User? user = _dbContext.Users.FirstOrDefault(u => u.TelegramId == chatId);
+		Domain.User? user = _dbContext.Users.AsNoTracking().FirstOrDefault(u => u.TelegramId == chatId);
 
 		switch (command)
 		{
@@ -67,7 +68,7 @@ public class BotService
 				await _botClient.SendMessage(chatId, "You've been unregistered from receiving Hiragana practice messages.", cancellationToken: cancellationToken);
 				break;
 			case "/streak":
-				int streak = _dbContext.Users.FirstOrDefault(u => u.TelegramId == chatId)?.Streak ?? 0;
+				int streak = user?.Streak ?? 0;
 				await _botClient.SendMessage(chatId, $"Your current streak is {streak}.", cancellationToken: cancellationToken);
 				break;
 			case "/resetstreak":
@@ -84,7 +85,7 @@ public class BotService
 				{
 					return;
 				}
-				await _hiraganaService.SendHiraganaMessage(chatId, user.Id);
+				await _hiraganaService.SendHiraganaMessage(chatId, user.Id, cancellationToken);
 				break;
 			default:
 				await _botClient.SendMessage(chatId, "Command not recognized.", cancellationToken: cancellationToken);
@@ -156,7 +157,7 @@ public class BotService
 			message += $"\n\nYour current streak is **{user.Streak}**.";
 			await _botClient.SendMessage(chatId,
 				message,
-				ParseMode.Markdown, cancellationToken: cancellationToken);
+				ParseMode.Markdown, cancellationToken: cancellationToken, replyParameters: question.MessageId);
 		}
 		else
 		{
@@ -168,14 +169,15 @@ public class BotService
 				user.ResetStreak();
 				await _dbContext.SaveChangesAsync(cancellationToken);
 
-				await _botClient.SendMessage(chatId, "You've reached the maximum number of attempts. The correct answer was " + question.CorrectAnswer, cancellationToken: cancellationToken);
+				await _botClient.SendMessage(chatId, "You've reached the maximum number of attempts. The correct answer was " + question.CorrectAnswer, cancellationToken: cancellationToken, replyParameters: question.MessageId);
 				return;
 			}
 			await _dbContext.SaveChangesAsync(cancellationToken);
 
-			await _botClient.SendMessage(chatId, "Incorrect. Please try again.", cancellationToken: cancellationToken);
+			await _botClient.SendMessage(chatId, "Incorrect. Please try again.", cancellationToken: cancellationToken, replyParameters: question.MessageId);
 		}
 	}
+
 	public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 	{
 		var errorMessage = exception switch

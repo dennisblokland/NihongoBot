@@ -13,8 +13,8 @@ namespace NihongoBot.Domain.Entities
 		public DateTime SentAt { get; set; }
 		public bool IsAnswered { get; set; }
 		public bool IsExpired { get; set; }
-
 		public int Attempts { get; set; }
+		public int TimeLimit { get; set; } // Time limit in minutes for answering the question
+		public int MessageId { get; set; }
 	}
-
 }
