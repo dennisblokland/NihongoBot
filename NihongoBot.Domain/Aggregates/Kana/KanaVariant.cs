@@ -1,6 +1,4 @@
-using NihongoBot.Domain.Base;
-
-namespace NihongoBot.Domain.Aggregates.Hiragana
+namespace NihongoBot.Domain.Aggregates.Kana
 {
 	public class KanaVariant
     {

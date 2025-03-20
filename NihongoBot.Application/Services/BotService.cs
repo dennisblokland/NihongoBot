@@ -1,9 +1,8 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-using NihongoBot.Domain.Aggregates.Hiragana;
+using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
-using NihongoBot.Persistence;
+using NihongoBot.Domain.Interfaces.Repositories;
 
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -14,19 +13,25 @@ namespace NihongoBot.Application.Services;
 
 public class BotService
 {
+	private readonly IUserRepository _userRepository;
+	private readonly IQuestionRepository _questionRepository;
+	private readonly IKanaRepository _kanaRepository;
 	private readonly ITelegramBotClient _botClient;
-	private readonly AppDbContext _dbContext;
 	private readonly HiraganaService _hiraganaService;
 	private readonly ILogger<BotService> _logger;
 
 	public BotService(
+		IUserRepository userRepository,
+		IQuestionRepository questionRepository,
+		IKanaRepository kanaRepository,
 		ITelegramBotClient botClient,
-		AppDbContext dbContext,
 		HiraganaService hiraganaService,
 		ILogger<BotService> logger)
 	{
+		_userRepository = userRepository;
 		_botClient = botClient;
-		_dbContext = dbContext;
+		_questionRepository = questionRepository;
+		_kanaRepository = kanaRepository;
 		_hiraganaService = hiraganaService;
 		_logger = logger;
 	}
@@ -51,7 +56,7 @@ public class BotService
 	private async Task HandleCommand(long chatId, string command, CancellationToken cancellationToken)
 	{
 		ChatFullInfo chat = await _botClient.GetChat(chatId);
-		Domain.User? user = _dbContext.Users.AsNoTracking().FirstOrDefault(u => u.TelegramId == chatId);
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId);
 
 		switch (command)
 		{
@@ -63,8 +68,8 @@ public class BotService
 				{
 					return;
 				}
-				_dbContext.Users.Remove(user);
-				await _dbContext.SaveChangesAsync(cancellationToken);
+				_userRepository.Remove(user);
+				await _userRepository.SaveChangesAsync(cancellationToken);
 				await _botClient.SendMessage(chatId, "You've been unregistered from receiving Hiragana practice messages.", cancellationToken: cancellationToken);
 				break;
 			case "/streak":
@@ -77,7 +82,7 @@ public class BotService
 					return;
 				}
 				user.ResetStreak();
-				await _dbContext.SaveChangesAsync(cancellationToken);
+				await _userRepository.SaveChangesAsync(cancellationToken);
 				await _botClient.SendMessage(chatId, "Your streak has been reset.", cancellationToken: cancellationToken);
 				break;
 			case "/test":
@@ -93,43 +98,36 @@ public class BotService
 		}
 	}
 
-	private async Task RegisterUser(long chatId, CancellationToken cancellationToken)
+	private async Task<Domain.User> RegisterUser(long chatId, CancellationToken cancellationToken)
 	{
 		// Check if user is already registered
-		if (_dbContext.Users.Any(u => u.TelegramId == chatId))
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId);
+		if (user != null)
 		{
 			await _botClient.SendMessage(chatId, "You're already registered to receive Hiragana practice messages.");
-			return;
+			return user;
 		}
 
 		ChatFullInfo chat = await _botClient.GetChat(chatId);
 
-		_dbContext.Users.Add(new Domain.User(chatId, chat.Username));
-		await _dbContext.SaveChangesAsync(cancellationToken);
+		user = await _userRepository.AddAsync(new Domain.User(chatId, chat.Username), cancellationToken);
+		await _userRepository.SaveChangesAsync(cancellationToken);
 		await _botClient.SendMessage(chatId, "Welcome to NihongoBot! You're now registered to receive Hiragana practice messages.");
 
+		return user;
 	}
 
 	private async Task ProcessAnswer(long chatId, string userMessage, CancellationToken cancellationToken)
 	{
-		Domain.User? user = _dbContext.Users.FirstOrDefault(u => u.TelegramId == chatId);
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId);
 
 		if (user == null)
 		{
-			await RegisterUser(chatId, cancellationToken);
-			user = _dbContext.Users.FirstOrDefault(u => u.TelegramId == chatId);
-
 			return;
 		}
 
-		Question? question = _dbContext.Questions
-		.OrderBy(q => q.SentAt)
-		.FirstOrDefault(q =>
-			q.UserId == user.Id &&
-			q.IsAnswered == false &&
-			q.IsExpired == false
-		);
-
+		Question? question = await _questionRepository.GetOldestUnansweredQuestionAsync(user.Id);
+		
 		if (question == null)
 			return;
 
@@ -137,9 +135,9 @@ public class BotService
 		{
 			question.IsAnswered = true;
 			user.IncreaseStreak();
-			await _dbContext.SaveChangesAsync(cancellationToken);
+			await _userRepository.SaveChangesAsync(cancellationToken);
 
-			Kana? kana = _dbContext.Kanas.FirstOrDefault(k => k.Character == question.QuestionText);
+			Kana? kana = await _kanaRepository.GetByCharacterAsync(question.QuestionText, cancellationToken);
 			if (kana == null)
 			{
 				return;
@@ -167,12 +165,12 @@ public class BotService
 			{
 				question.IsExpired = true;
 				user.ResetStreak();
-				await _dbContext.SaveChangesAsync(cancellationToken);
+				await _userRepository.SaveChangesAsync(cancellationToken);
 
 				await _botClient.SendMessage(chatId, "You've reached the maximum number of attempts. The correct answer was " + question.CorrectAnswer, cancellationToken: cancellationToken, replyParameters: question.MessageId);
 				return;
 			}
-			await _dbContext.SaveChangesAsync(cancellationToken);
+			await _questionRepository.SaveChangesAsync(cancellationToken);
 
 			await _botClient.SendMessage(chatId, "Incorrect. Please try again.", cancellationToken: cancellationToken, replyParameters: question.MessageId);
 		}

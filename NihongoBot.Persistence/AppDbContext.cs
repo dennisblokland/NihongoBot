@@ -1,10 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-using NihongoBot.Domain;
-using NihongoBot.Domain.Aggregates.Hiragana;
 using NihongoBot.Domain.Base;
-using NihongoBot.Domain.Entities;
 
 namespace NihongoBot.Persistence;
 
@@ -12,12 +9,6 @@ public class AppDbContext : DbContext
 {
     public AppDbContext() : base() { }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
-    public DbSet<User> Users { get; set; }
-
-    public DbSet<Kana> Kanas { get; set; }
-
-	public DbSet<Question> Questions { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -29,9 +20,7 @@ public class AppDbContext : DbContext
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-
-        modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+         modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
     }
 
     public override int SaveChanges()

@@ -1,8 +1,8 @@
-using System;
+using NihongoBot.Domain.Interfaces;
 
 namespace NihongoBot.Domain.Base
 {
-    public abstract class DomainEntity<T>
+    public abstract class DomainEntity<T> : IDomainEntity<T> where T : struct
     {
         public T Id { get; set; }
         public DateTime? CreatedAt { get; private set; }

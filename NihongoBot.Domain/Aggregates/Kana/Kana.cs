@@ -1,7 +1,7 @@
 using NihongoBot.Domain.Base;
 using NihongoBot.Domain.Enums;
 
-namespace NihongoBot.Domain.Aggregates.Hiragana
+namespace NihongoBot.Domain.Aggregates.Kana
 {
     public class Kana : DomainEntity<int>
     {

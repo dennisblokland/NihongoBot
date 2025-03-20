@@ -54,7 +54,7 @@ namespace NihongoBot.Persistence.Migrations
                     b.HasIndex("Character")
                         .IsUnique();
 
-                    b.ToTable("Kanas");
+                    b.ToTable("Kanas", (string)null);
 
                     b.HasData(
                         new
@@ -582,7 +582,7 @@ namespace NihongoBot.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", (string)null);
                 });
 
             modelBuilder.Entity("NihongoBot.Domain.User", b =>
@@ -613,7 +613,7 @@ namespace NihongoBot.Persistence.Migrations
                     b.HasIndex("TelegramId")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("NihongoBot.Domain.Aggregates.Hiragana.Kana", b =>
