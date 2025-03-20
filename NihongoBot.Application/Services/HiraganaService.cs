@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Helpers;
@@ -25,11 +26,17 @@ public class HiraganaService
 		_dbContext = dbContext;
 	}
 
-	public async Task SendHiraganaMessage(long telegramId, Guid userId)
+	public async Task SendHiraganaMessage(long telegramId, Guid userId, CancellationToken cancellationToken)
 	{
 		_logger.LogInformation("Sending Hiragana message at {Time}", DateTime.Now);
 
-		Kana kana = _dbContext.Kanas.OrderBy(h => Guid.NewGuid()).FirstOrDefault();
+		Kana? kana = await _dbContext.Kanas.OrderBy(h => Guid.NewGuid()).FirstOrDefaultAsync(cancellationToken);
+		if (kana == null)
+		{
+			_logger.LogWarning("No Kana found in the database.");
+			return;
+		}
+
 		Dictionary<Kana, byte[]> renderedKana = [];
 
 		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(kana.Character);
@@ -55,6 +62,6 @@ public class HiraganaService
 		};
 
 		_dbContext.Questions.Add(question);
-		await _dbContext.SaveChangesAsync();
+		await _dbContext.SaveChangesAsync(cancellationToken);
 	}
 }

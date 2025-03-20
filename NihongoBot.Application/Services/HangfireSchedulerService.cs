@@ -1,6 +1,7 @@
 using Hangfire;
 using Hangfire.Storage;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -49,7 +50,8 @@ public class HangfireSchedulerService : IHostedService
 		// Schedule a job to check for expired questions every minute
 		_recurringJobManager.AddOrUpdate(
 			"CheckExpiredQuestions",
-			() => CheckExpiredQuestions(),
+			//Hangfire replaces the CancellationToken internally
+			() => CheckExpiredQuestions(CancellationToken.None),
 			Cron.Minutely
 		);
 
@@ -115,19 +117,19 @@ public class HangfireSchedulerService : IHostedService
 
 			_recurringJobManager.AddOrUpdate<HiraganaService>(
 				jobId,
-				service => service.SendHiraganaMessage(user.TelegramId, user.Id),
+				service => service.SendHiraganaMessage(user.TelegramId, user.Id, CancellationToken.None),
 				Cron.Yearly(scheduledDateTime.Month, scheduledDateTime.Day, scheduledDateTime.Hour, scheduledDateTime.Minute)
 			);
 		}
 
 	}
 
-	public async Task CheckExpiredQuestions()
+	public async Task CheckExpiredQuestions(CancellationToken cancellationToken)
 	{
 		DateTime now = DateTime.UtcNow;
-		List<Question> expiredQuestions = _dbContext.Questions
+		List<Question> expiredQuestions = await _dbContext.Questions
 			.Where(q => !q.IsAnswered && !q.IsExpired && q.SentAt.AddMinutes(q.TimeLimit) <= now)
-			.ToList();
+			.ToListAsync(cancellationToken);
 
 		foreach (Question question in expiredQuestions)
 		{
@@ -139,12 +141,12 @@ public class HangfireSchedulerService : IHostedService
 				// reply to the original message with the correct answer
 				await _botClient.SendMessage(user.TelegramId,
 				"You've reached the time limit. The correct answer was " + question.CorrectAnswer,
-				replyParameters: question.MessageId);
+				replyParameters: question.MessageId, cancellationToken: cancellationToken);
 
 			}
 		}
 
-		await _dbContext.SaveChangesAsync();
+		await _dbContext.SaveChangesAsync(cancellationToken);
 	}
 
 	public Task StopAsync(CancellationToken cancellationToken)

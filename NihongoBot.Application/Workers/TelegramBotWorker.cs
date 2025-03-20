@@ -6,14 +6,13 @@ using NihongoBot.Application.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 public class TelegramBotWorker : IHostedService
 {
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramBotWorker> _logger;
     private readonly BotService _botService;
-    private CancellationTokenSource _cts;
+    private readonly CancellationTokenSource _cts = new();
 
     public TelegramBotWorker(ITelegramBotClient botClient, ILogger<TelegramBotWorker> logger, BotService botService)
     {
@@ -26,10 +25,8 @@ public class TelegramBotWorker : IHostedService
     {
         _logger.LogInformation("Telegram bot is starting...");
 
-        _cts = new CancellationTokenSource();
-
-        var receiverOptions = new ReceiverOptions
-        {
+		ReceiverOptions receiverOptions = new()
+		{
             AllowedUpdates = [], // Receive all update types
         };
 
@@ -54,8 +51,6 @@ public class TelegramBotWorker : IHostedService
         new BotCommand { Command = "start", Description = "Start interacting with NihongoBot" },
         new BotCommand { Command = "streak", Description = "Check your current streak" },
         new BotCommand { Command = "resetstreak", Description =  "Reset your current streak" },
-
-
     ];
 
 }

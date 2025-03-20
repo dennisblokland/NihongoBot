@@ -85,7 +85,7 @@ public class BotService
 				{
 					return;
 				}
-				await _hiraganaService.SendHiraganaMessage(chatId, user.Id);
+				await _hiraganaService.SendHiraganaMessage(chatId, user.Id, cancellationToken);
 				break;
 			default:
 				await _botClient.SendMessage(chatId, "Command not recognized.", cancellationToken: cancellationToken);
