@@ -27,7 +27,7 @@ jobs:
           with:
               files: '*/appsettings.json'
           env:
-              TelegramBotToken: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+              ApplicationOptions:TelegramBotToken: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
         - name: Build the Project
           run: dotnet build
