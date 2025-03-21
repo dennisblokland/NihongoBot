@@ -1,11 +1,10 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Helpers;
-using NihongoBot.Domain.Aggregates.Hiragana;
+using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Enums;
-using NihongoBot.Persistence;
+using NihongoBot.Domain.Interfaces.Repositories;
 
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -16,52 +15,56 @@ namespace NihongoBot.Application.Services;
 public class HiraganaService
 {
 	private readonly ITelegramBotClient _botClient;
+	private readonly IQuestionRepository _questionRepository;
+	private readonly IKanaRepository _kanaRepository;
 	private readonly ILogger<HiraganaService> _logger;
-	private readonly AppDbContext _dbContext;
 
-	public HiraganaService(ITelegramBotClient botClient, ILogger<HiraganaService> logger, AppDbContext dbContext)
+	public HiraganaService(
+		IQuestionRepository questionRepository,
+		IKanaRepository kanaRepository,
+		ITelegramBotClient botClient,
+		ILogger<HiraganaService> logger
+	)
 	{
 		_botClient = botClient;
 		_logger = logger;
-		_dbContext = dbContext;
+		_questionRepository = questionRepository;
+		_kanaRepository = kanaRepository;
 	}
 
 	public async Task SendHiraganaMessage(long telegramId, Guid userId, CancellationToken cancellationToken)
 	{
 		_logger.LogInformation("Sending Hiragana message at {Time}", DateTime.Now);
 
-		Kana? kana = await _dbContext.Kanas.OrderBy(h => Guid.NewGuid()).FirstOrDefaultAsync(cancellationToken);
+		Kana? kana = await _kanaRepository.GetRandomAsync(KanaType.Hiragana, cancellationToken);
+
 		if (kana == null)
 		{
 			_logger.LogWarning("No Kana found in the database.");
 			return;
 		}
 
-		Dictionary<Kana, byte[]> renderedKana = [];
 
 		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(kana.Character);
-		renderedKana.Add(kana, imageBytes);
+		Stream stream = new MemoryStream(imageBytes);
 
-		//take random hiragana character from the list
-		KeyValuePair<Kana, byte[]> hiragana = renderedKana.OrderBy(h => Guid.NewGuid()).First();
-		Stream stream = new MemoryStream(hiragana.Value);
 		Message message = await _botClient.SendPhoto(telegramId,
 		InputFile.FromStream(stream, "hiragana.png"),
-		caption: $"What is the Romaji for this {hiragana.Key.Character} Hiragana character?");
+		caption: $"What is the Romaji for this {kana.Character} Hiragana character?", cancellationToken: cancellationToken);
 
 		//save the Question to the database
 		Question question = new()
 		{
 			UserId = userId,
 			QuestionType = QuestionType.Hiragana,
-			QuestionText = hiragana.Key.Character,
-			CorrectAnswer = hiragana.Key.Romaji,
+			QuestionText = kana.Character,
+			CorrectAnswer = kana.Romaji,
 			SentAt = DateTime.UtcNow,
 			MessageId = message.MessageId,
 			TimeLimit = 5 // Set the time limit to 5 minutes
 		};
 
-		_dbContext.Questions.Add(question);
-		await _dbContext.SaveChangesAsync(cancellationToken);
+		await _questionRepository.AddAsync(question, cancellationToken);
+		await _questionRepository.SaveChangesAsync(cancellationToken);
 	}
 }

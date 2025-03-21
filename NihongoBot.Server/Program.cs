@@ -1,54 +1,44 @@
 using Hangfire;
 using Hangfire.Dashboard.BasicAuthorization;
-using Hangfire.PostgreSql;
 
 using Microsoft.EntityFrameworkCore;
 
 using NihongoBot.Application.Services;
 using NihongoBot.Persistence;
+using NihongoBot.Infrastructure.Extentions;
+using Hangfire.Storage;
 
-using Telegram.Bot;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-IConfigurationRoot config = new ConfigurationBuilder()
+builder.Configuration
 			.SetBasePath(Directory.GetCurrentDirectory())
 			.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-			.AddJsonFile("appsettings.Development.json", optional: true)
+			.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
 			.AddEnvironmentVariables()
 			.Build();
 
-string connectionString = config.GetConnectionString("NihongoBotDB");
+builder.Services.AddInfrastructureServices();
+builder.Services.AddHangfireServer(options => options.ServerName = "Hangfire Server");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-options.UseNpgsql(connectionString));
+builder.Services.AddScoped<HiraganaService>();
+builder.Services.AddScoped<HangfireSchedulerService>();
 
 using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope())
 {
 	AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 	dbContext.Database.Migrate();
+	
+	HangfireSchedulerService hangfireSchedulerService = scope.ServiceProvider.GetRequiredService<HangfireSchedulerService>();
+	await hangfireSchedulerService.InitializeSchedulerAsync();
 }
 
 
-builder.Services.AddHangfire(config => config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-								.UseSimpleAssemblyNameTypeSerializer()
-								.UseDefaultTypeSerializer()
-								.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
-builder.Services.AddHangfireServer(options => options.ServerName = "Hangfire Server");
-
-
-
-
-builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(config["TelegramBotToken"]));
-builder.Services.AddScoped<HiraganaService>();
-
-builder.Services.AddHostedService<HangfireSchedulerService>();
 
 
 var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
-
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {

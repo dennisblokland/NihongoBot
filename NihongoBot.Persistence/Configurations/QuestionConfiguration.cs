@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using NihongoBot.Domain;
 using NihongoBot.Domain.Entities;
 
 namespace NihongoBot.Persistence.Configurations
@@ -10,6 +9,8 @@ namespace NihongoBot.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<Question> builder)
         {
+			builder.ToTable("Questions");
+            
             builder.HasKey(q => q.Id);
 
             builder.Property(q => q.UserId)

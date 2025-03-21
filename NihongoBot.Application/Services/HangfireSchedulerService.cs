@@ -1,44 +1,48 @@
 using Hangfire;
 using Hangfire.Storage;
 
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Helpers;
 using NihongoBot.Domain;
 using NihongoBot.Domain.Entities;
+using NihongoBot.Domain.Interfaces.Repositories;
 using NihongoBot.Persistence;
 
 using Telegram.Bot;
 
 namespace NihongoBot.Application.Services;
 
-public class HangfireSchedulerService : IHostedService
+public class HangfireSchedulerService
 {
 	private readonly ILogger<HangfireSchedulerService> _logger;
+	private readonly IUserRepository _userRepository;
+	private readonly IQuestionRepository _questionRepository;
 	private readonly IRecurringJobManager _recurringJobManager;
 	private readonly ITelegramBotClient _botClient;
-	private readonly AppDbContext _dbContext;
+    private readonly JobStorage _jobStorage;
 
 	public HangfireSchedulerService(
+		IUserRepository userRepository,
+		IQuestionRepository questionRepository,
+		ITelegramBotClient botClient,
+		IRecurringJobManager recurringJobManager,
 		ILogger<HangfireSchedulerService> logger,
-		 IRecurringJobManager recurringJobManager,
-		 IServiceScopeFactory serviceScopeFactory,
-		 ITelegramBotClient botClient)
+		JobStorage jobStorage)
 	{
 		_logger = logger;
-		_recurringJobManager = recurringJobManager;
 		_botClient = botClient;
-		_dbContext = serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<AppDbContext>();
+		_userRepository = userRepository;
+		_questionRepository = questionRepository;
+		_recurringJobManager = recurringJobManager;
+		_jobStorage = jobStorage;
 	}
 
-	public Task StartAsync(CancellationToken cancellationToken)
+	public async Task InitializeSchedulerAsync()
 	{
 		_logger.LogInformation("Starting Hangfire job scheduler...");
 
-		ScheduleHiraganaJobs();
+		await ScheduleHiraganaJobs();
 
 		//schedule a job to schedule the jobs again at midnight
 		_recurringJobManager.AddOrUpdate(
@@ -56,12 +60,11 @@ public class HangfireSchedulerService : IHostedService
 		);
 
 		_logger.LogInformation("Hiragana jobs scheduled successfully.");
-		return Task.CompletedTask;
 	}
 
-	public void ScheduleHiraganaJobs()
+	public async Task ScheduleHiraganaJobs()
 	{
-		List<User> users = _dbContext.Users.ToList();
+		IEnumerable<User> users = await _userRepository.GetAsync();
 
 		foreach (User user in users)
 		{
@@ -72,12 +75,12 @@ public class HangfireSchedulerService : IHostedService
 	public void ScheduleHiraganaJobsForUser(User user)
 	{
 		List<RecurringJobDto> currentJobs = [];
-		IStorageConnection conn = JobStorage.Current.GetConnection();
+		IStorageConnection conn = _jobStorage.GetConnection();
+
 		int jobCount = 2; // This can be replaced with a configuration value in the future
-		JobStorageConnection storage = (JobStorageConnection) conn;
-		if (storage != null)
+		if (conn != null)
 		{
-			currentJobs = storage.GetRecurringJobs().Where(j => j.Id.Contains("SendHiragana_") && j.Id.Contains(user.Id.ToString())).ToList();
+			currentJobs = conn.GetRecurringJobs().Where(j => j.Id.Contains("SendHiragana_") && j.Id.Contains(user.Id.ToString())).ToList();
 			if (currentJobs.Count > jobCount)
 			{
 				// Remove all jobs
@@ -126,15 +129,13 @@ public class HangfireSchedulerService : IHostedService
 
 	public async Task CheckExpiredQuestions(CancellationToken cancellationToken)
 	{
-		DateTime now = DateTime.UtcNow;
-		List<Question> expiredQuestions = await _dbContext.Questions
-			.Where(q => !q.IsAnswered && !q.IsExpired && q.SentAt.AddMinutes(q.TimeLimit) <= now)
-			.ToListAsync(cancellationToken);
+		IEnumerable<Question> expiredQuestions = await _questionRepository.GetExpiredQuestionsAsync();
 
 		foreach (Question question in expiredQuestions)
 		{
 			question.IsExpired = true;
-			User? user = _dbContext.Users.FirstOrDefault(u => u.Id == question.UserId);
+
+			User? user = await _userRepository.FindByIdAsync(question.UserId, cancellationToken);
 			if (user != null)
 			{
 				user.ResetStreak();
@@ -146,12 +147,6 @@ public class HangfireSchedulerService : IHostedService
 			}
 		}
 
-		await _dbContext.SaveChangesAsync(cancellationToken);
-	}
-
-	public Task StopAsync(CancellationToken cancellationToken)
-	{
-		_logger.LogInformation("Hangfire Scheduler stopping...");
-		return Task.CompletedTask;
+		await _questionRepository.SaveChangesAsync(cancellationToken);
 	}
 }

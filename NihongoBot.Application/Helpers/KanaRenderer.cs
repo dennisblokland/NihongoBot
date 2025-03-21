@@ -1,6 +1,3 @@
-using System;
-using System.Drawing;
-
 using SkiaSharp;
 
 namespace NihongoBot.Application.Helpers;

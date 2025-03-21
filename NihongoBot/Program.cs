@@ -1,12 +1,5 @@
-﻿using Telegram.Bot;
-using Microsoft.Extensions.Configuration;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using NihongoBot.Application.Services;
-using NihongoBot.Persistence;
-using Hangfire;
-using Hangfire.PostgreSql;
+﻿using NihongoBot.Application.Services;
+using NihongoBot.Infrastructure.Extentions;
 
 class Program
 {
@@ -20,23 +13,16 @@ class Program
         Host.CreateDefaultBuilder(args)
         .ConfigureServices((hostContext, services) =>
         {
-            IConfigurationRoot config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile("appsettings.Development.json", optional: true)
-                .AddEnvironmentVariables()
-                .Build();
+			IConfigurationRoot config = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+				.AddJsonFile($"appsettings.Development.json", optional: true, reloadOnChange: true)
+				.AddEnvironmentVariables()
+				.Build();
+			services.AddSingleton<IConfiguration>(config);
 
-            string connectionString = config.GetConnectionString("NihongoBotDB");
+			services.AddInfrastructureServices();
 
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(connectionString));
-
-      		 services.AddHangfire(config => config
-                    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
-
-
-            services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(config["TelegramBotToken"]));
             services.AddSingleton<BotService>();
             services.AddSingleton<HiraganaService>();
             services.AddHostedService<TelegramBotWorker>();

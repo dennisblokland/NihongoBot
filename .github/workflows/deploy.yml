@@ -32,6 +32,9 @@ jobs:
         - name: Build the Project
           run: dotnet build
 
+        - name: Run Tests
+          run: dotnet test
+          
         - name:  Generate Compose File
           working-directory: NihongoBot.AppHost
           run: aspirate generate --output-format compose --non-interactive --include-dashboard --secret-password ${{ secrets.ASPIRATE_SECRET_PASSWORD }}

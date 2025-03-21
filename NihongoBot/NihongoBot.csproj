@@ -23,5 +23,6 @@
   <ProjectReference Include="..\NihongoBot.Domain\NihongoBot.Domain.csproj" />
   <ProjectReference Include="..\NihongoBot.Persistence\NihongoBot.Persistence.csproj" />
   <ProjectReference Include="..\NihongoBot.Application\NihongoBot.Application.csproj" />
+  <ProjectReference Include="..\NihongoBot.Infrastructure\NihongoBot.Infrastructure.csproj" />
 </ItemGroup>
 </Project>
