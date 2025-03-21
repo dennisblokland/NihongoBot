@@ -11,7 +11,6 @@ using System.Reflection;
 using NihongoBot.Infrastructure.Interfaces;
 using NihongoBot.Domain.Interfaces;
 
-
 namespace NihongoBot.Infrastructure.Extentions;
 
 public static class ServiceCollectionExtensions

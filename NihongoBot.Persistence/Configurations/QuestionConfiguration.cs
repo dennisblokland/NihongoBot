@@ -10,6 +10,7 @@ namespace NihongoBot.Persistence.Configurations
         public void Configure(EntityTypeBuilder<Question> builder)
         {
 			builder.ToTable("Questions");
+            
             builder.HasKey(q => q.Id);
 
             builder.Property(q => q.UserId)
