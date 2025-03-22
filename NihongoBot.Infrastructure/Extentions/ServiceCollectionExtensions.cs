@@ -10,12 +10,16 @@ using Telegram.Bot;
 using System.Reflection;
 using NihongoBot.Infrastructure.Interfaces;
 using NihongoBot.Domain.Interfaces;
+using NihongoBot.Application.Services;
+using NihongoBot.Application.Handlers;
+using NihongoBot.Application.Interfaces;
 
 namespace NihongoBot.Infrastructure.Extentions;
 
 public static class ServiceCollectionExtensions
 {
 	private static readonly Assembly _infrastructureAssembly = typeof(IInfrastructureHook).Assembly;
+	private static readonly Assembly _applicationAssembly = typeof(IApplicationHook).Assembly;
 
 	public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
 	{
@@ -76,6 +80,17 @@ public static class ServiceCollectionExtensions
 			.AddClasses(classes => classes.AssignableTo<IRepository>())
 			.AsImplementedInterfaces()
 			.WithScopedLifetime());
+
+
+		services.Scan(scan => scan
+			.FromAssemblies(_applicationAssembly)
+			.AddClasses(classes => classes.AssignableTo<ITelegramCommandHandler>())
+			.AsSelf()
+			.AsImplementedInterfaces()
+			.WithScopedLifetime());
+
+		services.AddScoped<CommandDispatcher>();
+
 	}
 }
 
