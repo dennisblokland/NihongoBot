@@ -1,8 +1,3 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-
 using Microsoft.Extensions.Logging;
 
 using Moq;
@@ -14,14 +9,10 @@ using NihongoBot.Domain.Enums;
 using NihongoBot.Domain.Interfaces.Repositories;
 
 using Telegram.Bot;
-using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Requests;
-using Telegram.Bot.Types.Enums;
 
-using Xunit;
-
-namespace NihongoBot.Application.Tests;
+namespace NihongoBot.Application.Tests.Services;
 
 public class HiraganaServiceTest
 {

@@ -7,7 +7,6 @@ using NihongoBot.Application.Helpers;
 using NihongoBot.Domain;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Interfaces.Repositories;
-using NihongoBot.Persistence;
 
 using Telegram.Bot;
 

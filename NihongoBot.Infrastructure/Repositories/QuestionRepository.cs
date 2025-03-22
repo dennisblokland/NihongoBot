@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 using Name.Infrastructure.Repositories;
 
-using NihongoBot.Domain;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Interfaces.Repositories;
 

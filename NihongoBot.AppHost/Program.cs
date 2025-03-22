@@ -1,14 +1,16 @@
-var builder = DistributedApplication.CreateBuilder(args);
-var postgres = builder.AddPostgres("Postgres")
+IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
+IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("Postgres")
 						.WithDataVolume(isReadOnly: false)
 						.WithPgAdmin();
 
-var postgresdb = postgres.AddDatabase("NihongoBotDB");
+IResourceBuilder<PostgresDatabaseResource> postgresdb = postgres.AddDatabase("NihongoBotDB");
 
-var server = builder.AddProject<Projects.NihongoBot_Server>("NihongoBotServer")
-							.WithReference(postgresdb);
+IResourceBuilder<ProjectResource> server = builder.AddProject<Projects.NihongoBot_Server>("NihongoBotServer")
+							.WithReference(postgresdb)
+							.WaitFor(postgresdb);
 
-var bot = builder.AddProject<Projects.NihongoBot>("NihongoBot")
-							.WithReference(postgresdb);
+IResourceBuilder<ProjectResource> bot = builder.AddProject<Projects.NihongoBot>("NihongoBot")
+							.WithReference(postgresdb)
+							.WaitFor(postgresdb);
 
 builder.Build().Run();

@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using NihongoBot.Application.Services;
 using NihongoBot.Persistence;
 using NihongoBot.Infrastructure.Extentions;
-using Hangfire.Storage;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -33,10 +32,7 @@ using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope
 	await hangfireSchedulerService.InitializeSchedulerAsync();
 }
 
-
-
-
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
