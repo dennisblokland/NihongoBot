@@ -8,7 +8,7 @@ using NihongoBot.Domain.Interfaces.Repositories;
 
 using Telegram.Bot;
 using Telegram.Bot.Types;
-
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace NihongoBot.Application.Services;
 
@@ -66,5 +66,27 @@ public class HiraganaService
 
 		await _questionRepository.AddAsync(question, cancellationToken);
 		await _questionRepository.SaveChangesAsync(cancellationToken);
+	}
+
+	public async Task SendReadyMessage(long telegramId, CancellationToken cancellationToken)
+	{
+		_logger.LogInformation("Sending 'Ready for another challenge?' message at {Time}", DateTime.Now);
+
+		InlineKeyboardMarkup inlineKeyboard = new(
+			new[]
+			{
+				InlineKeyboardButton.WithCallbackData("Ready", "ready")
+			});
+
+		await _botClient.SendTextMessageAsync(
+			chatId: telegramId,
+			text: "Are you ready for another challenge?",
+			replyMarkup: inlineKeyboard,
+			cancellationToken: cancellationToken);
+	}
+
+	public async Task HandleReadyButtonClick(long telegramId, Guid userId, CancellationToken cancellationToken)
+	{
+		await SendHiraganaMessage(telegramId, userId, cancellationToken);
 	}
 }

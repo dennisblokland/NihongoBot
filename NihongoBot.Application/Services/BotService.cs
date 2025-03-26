@@ -19,6 +19,7 @@ public class BotService
 	private readonly ITelegramBotClient _botClient;
 	private readonly ILogger<BotService> _logger;
 	private readonly CommandDispatcher _commandDispatcher;
+	private readonly HiraganaService _hiraganaService;
 
 	public BotService(
 		IUserRepository userRepository,
@@ -26,7 +27,8 @@ public class BotService
 		IKanaRepository kanaRepository,
 		ITelegramBotClient botClient,
 		ILogger<BotService> logger,
-		CommandDispatcher commandDispatcher)
+		CommandDispatcher commandDispatcher,
+		HiraganaService hiraganaService)
 	{
 		_userRepository = userRepository;
 		_botClient = botClient;
@@ -34,6 +36,7 @@ public class BotService
 		_kanaRepository = kanaRepository;
 		_logger = logger;
 		_commandDispatcher = commandDispatcher;
+		_hiraganaService = hiraganaService;
 	}
 
 	public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
@@ -50,6 +53,11 @@ public class BotService
 			{
 				await ProcessAnswer(chatId, userMessage, cancellationToken);
 			}
+		}
+		else if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery?.Data == "ready")
+		{
+			long chatId = update.CallbackQuery.Message.Chat.Id;
+			await HandleReadyButtonClick(chatId, cancellationToken);
 		}
 	}
 
@@ -116,6 +124,15 @@ public class BotService
 			await _questionRepository.SaveChangesAsync(cancellationToken);
 
 			await _botClient.SendMessage(chatId, "Incorrect. Please try again.", cancellationToken: cancellationToken, replyParameters: question.MessageId);
+		}
+	}
+
+	private async Task HandleReadyButtonClick(long chatId, CancellationToken cancellationToken)
+	{
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId, cancellationToken);
+		if (user != null)
+		{
+			await _hiraganaService.HandleReadyButtonClick(chatId, user.Id, cancellationToken);
 		}
 	}
 
