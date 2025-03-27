@@ -89,7 +89,15 @@ public static class ServiceCollectionExtensions
 			.AsImplementedInterfaces()
 			.WithScopedLifetime());
 
+		services.Scan(scan => scan
+			.FromAssemblies(_applicationAssembly)
+			.AddClasses(classes => classes.AssignableTo(typeof(ITelegramCallbackHandler<>)))
+			.AsSelf()
+			.AsImplementedInterfaces()
+			.WithScopedLifetime());
+
 		services.AddScoped<CommandDispatcher>();
+		services.AddScoped<CallbackDispatcher>();
 
 	}
 }

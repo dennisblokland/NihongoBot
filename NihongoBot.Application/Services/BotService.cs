@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
 
+using Newtonsoft.Json;
+
+using NihongoBot.Application.Models;
 using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Interfaces.Repositories;
@@ -19,6 +22,7 @@ public class BotService
 	private readonly ITelegramBotClient _botClient;
 	private readonly ILogger<BotService> _logger;
 	private readonly CommandDispatcher _commandDispatcher;
+	private readonly CallbackDispatcher _callbackDispatcher;
 	private readonly HiraganaService _hiraganaService;
 
 	public BotService(
@@ -28,6 +32,7 @@ public class BotService
 		ITelegramBotClient botClient,
 		ILogger<BotService> logger,
 		CommandDispatcher commandDispatcher,
+		CallbackDispatcher callbackDispatcher,
 		HiraganaService hiraganaService)
 	{
 		_userRepository = userRepository;
@@ -36,6 +41,7 @@ public class BotService
 		_kanaRepository = kanaRepository;
 		_logger = logger;
 		_commandDispatcher = commandDispatcher;
+		_callbackDispatcher = callbackDispatcher;
 		_hiraganaService = hiraganaService;
 	}
 
@@ -54,10 +60,9 @@ public class BotService
 				await ProcessAnswer(chatId, userMessage, cancellationToken);
 			}
 		}
-		else if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery?.Data == "ready")
+		else if (update.Type == UpdateType.CallbackQuery)
 		{
-			long chatId = update.CallbackQuery.Message.Chat.Id;
-			await HandleReadyButtonClick(chatId, cancellationToken);
+			await HandleCallback(update, cancellationToken);
 		}
 	}
 
@@ -66,6 +71,18 @@ public class BotService
 		string[] args = command.Split(' ');
 		string commandName = args[0].Substring(1); // Remove the leading '/'
 		await _commandDispatcher.DispatchAsync(chatId, commandName, args.Skip(1).ToArray(), cancellationToken);
+	}
+
+	private async Task HandleCallback(Update update, CancellationToken cancellationToken)
+	{
+		if (update.CallbackQuery?.Message?.Chat?.Id == null)
+		{
+			_logger.LogWarning("CallbackQuery or its Message/Chat is null.");
+			return;
+		}
+		long chatId = update.CallbackQuery.Message.Chat.Id;
+		ICallbackData data = JsonConvert.DeserializeObject<ICallbackData>(update.CallbackQuery?.Data, new CallbackDataConverter());
+		await _callbackDispatcher.DispatchAsync(chatId, data, cancellationToken);
 	}
 
 	private async Task ProcessAnswer(long chatId, string userMessage, CancellationToken cancellationToken)
@@ -78,7 +95,7 @@ public class BotService
 		}
 
 		Question? question = await _questionRepository.GetOldestUnansweredQuestionAsync(user.Id);
-		
+
 		if (question == null)
 			return;
 

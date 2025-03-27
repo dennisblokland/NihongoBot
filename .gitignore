@@ -138,3 +138,4 @@ appsettings.development.json
 NihongoBot.AppHost/manifest.json
 NihongoBot.AppHost/aspirate-output
 NihongoBot.AppHost/aspirate-output/docker-compose.yaml
+**/copilot-instructions.md

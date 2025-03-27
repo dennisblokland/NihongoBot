@@ -10,10 +10,27 @@ namespace NihongoBot.Infrastructure.Repositories;
 
 public class QuestionRepository(IServiceProvider serviceProvider) : AbstractDomainRepository<Question, Guid>(serviceProvider), IQuestionRepository
 {
+	public async Task<IEnumerable<Question>> GetExpiredPendingAcceptanceQuestionsAsync(CancellationToken cancellationToken = default)
+	{
+		return await DatabaseSet
+			.Where(q =>
+				!q.IsAnswered &&
+				!q.IsExpired &&
+				!q.IsAccepted &&
+				q.SentAt.AddHours(1) <= DateTime.UtcNow
+			)
+			.ToListAsync(cancellationToken);
+	}
+
 	public async Task<IEnumerable<Question>> GetExpiredQuestionsAsync(CancellationToken cancellationToken = default)
 	{
 		return await DatabaseSet
-			.Where(q => !q.IsAnswered && !q.IsExpired && q.SentAt.AddMinutes(q.TimeLimit) <= DateTime.UtcNow)
+			.Where(q =>
+				!q.IsAnswered &&
+				!q.IsExpired && 
+				!q.IsAccepted &&
+				q.SentAt.AddMinutes(q.TimeLimit) <= DateTime.UtcNow
+			)
 			.ToListAsync(cancellationToken);
 	}
 

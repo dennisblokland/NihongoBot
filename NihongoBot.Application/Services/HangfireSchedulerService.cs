@@ -61,7 +61,7 @@ public class HangfireSchedulerService
 		 // Schedule a job to check for unanswered confirmation messages every minute
         _recurringJobManager.AddOrUpdate(
             "CheckUnansweredConfirmationMessages",
-            () => CheckUnansweredConfirmationMessages(CancellationToken.None),
+            () => CheckUnansweredQuestions(CancellationToken.None),
             Cron.Minutely
         );
 
@@ -135,7 +135,7 @@ public class HangfireSchedulerService
 
 	public async Task CheckExpiredQuestions(CancellationToken cancellationToken)
 	{
-		IEnumerable<Question> expiredQuestions = await _questionRepository.GetExpiredQuestionsAsync();
+		IEnumerable<Question> expiredQuestions = await _questionRepository.GetExpiredQuestionsAsync(cancellationToken);
 
 		foreach (Question question in expiredQuestions)
 		{
@@ -153,10 +153,27 @@ public class HangfireSchedulerService
 			}
 		}
 
+		IEnumerable<Question> unansweredQuestions = await _questionRepository.GetExpiredPendingAcceptanceQuestionsAsync(cancellationToken);
+
+		foreach (Question question in unansweredQuestions)
+		{
+			question.IsExpired = true;
+
+			User? user = await _userRepository.FindByIdAsync(question.UserId, cancellationToken);
+			if (user != null)
+			{
+				user.ResetStreak();
+				await _botClient.SendMessage(user.TelegramId,
+					"You didn't confirm the challenge in time. Your streak has been reset",
+					replyParameters: question.MessageId, cancellationToken: cancellationToken);
+			}
+		}
+
+
 		await _questionRepository.SaveChangesAsync(cancellationToken);
 	}
 
-	public async Task CheckUnansweredConfirmationMessages(CancellationToken cancellationToken)
+	public async Task CheckUnansweredQuestions(CancellationToken cancellationToken)
     {
         IEnumerable<Question> unansweredQuestions = await _questionRepository.GetExpiredQuestionsAsync(cancellationToken);
 
