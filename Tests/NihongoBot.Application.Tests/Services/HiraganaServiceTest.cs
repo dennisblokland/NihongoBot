@@ -11,6 +11,7 @@ using NihongoBot.Domain.Interfaces.Repositories;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Requests;
+using AutoFixture;
 
 namespace NihongoBot.Application.Tests.Services;
 
@@ -58,12 +59,17 @@ public class HiraganaServiceTest
 				It.IsAny<SendPhotoRequest>(), 
 				It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Message());
+		Fixture fixture = new();
+		_questionRepositoryMock
+			.Setup(repo => repo.AddAsync(It.IsAny<Question>(), cancellationToken))
+			.ReturnsAsync(fixture.Create<Question>());
 
 		// Act
 		await _hiraganaService.SendHiraganaMessage(telegramId, userId, cancellationToken);
 
+		// Assert
        _botClientMock.Verify(client => client.SendRequest(
-            It.IsAny<SendPhotoRequest>(), 
+            It.IsAny<SendMessageRequest>(), 
             It.IsAny<CancellationToken>()), Times.Once);
 
 		_questionRepositoryMock.Verify(repo => repo.AddAsync(It.Is<Question>(q =>

@@ -61,10 +61,6 @@ public class HiraganaService
 		await _questionRepository.SaveChangesAsync(cancellationToken);
 
 		await SendReadyMessageAsync(telegramId, question.Id, cancellationToken);
-
-
-
-
 	}
 
 	public async Task SendQuestion(long telegramId, Question question, CancellationToken cancellationToken)
