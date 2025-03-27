@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
 
+using Newtonsoft.Json;
+
+using NihongoBot.Application.Models;
 using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Interfaces.Repositories;
@@ -19,6 +22,8 @@ public class BotService
 	private readonly ITelegramBotClient _botClient;
 	private readonly ILogger<BotService> _logger;
 	private readonly CommandDispatcher _commandDispatcher;
+	private readonly CallbackDispatcher _callbackDispatcher;
+	private readonly HiraganaService _hiraganaService;
 
 	public BotService(
 		IUserRepository userRepository,
@@ -26,7 +31,9 @@ public class BotService
 		IKanaRepository kanaRepository,
 		ITelegramBotClient botClient,
 		ILogger<BotService> logger,
-		CommandDispatcher commandDispatcher)
+		CommandDispatcher commandDispatcher,
+		CallbackDispatcher callbackDispatcher,
+		HiraganaService hiraganaService)
 	{
 		_userRepository = userRepository;
 		_botClient = botClient;
@@ -34,6 +41,8 @@ public class BotService
 		_kanaRepository = kanaRepository;
 		_logger = logger;
 		_commandDispatcher = commandDispatcher;
+		_callbackDispatcher = callbackDispatcher;
+		_hiraganaService = hiraganaService;
 	}
 
 	public async Task HandleUpdateAsync(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
@@ -51,6 +60,10 @@ public class BotService
 				await ProcessAnswer(chatId, userMessage, cancellationToken);
 			}
 		}
+		else if (update.Type == UpdateType.CallbackQuery)
+		{
+			await HandleCallback(update, cancellationToken);
+		}
 	}
 
 	private async Task HandleCommand(long chatId, string command, CancellationToken cancellationToken)
@@ -58,6 +71,18 @@ public class BotService
 		string[] args = command.Split(' ');
 		string commandName = args[0].Substring(1); // Remove the leading '/'
 		await _commandDispatcher.DispatchAsync(chatId, commandName, args.Skip(1).ToArray(), cancellationToken);
+	}
+
+	private async Task HandleCallback(Update update, CancellationToken cancellationToken)
+	{
+		if (update.CallbackQuery?.Message?.Chat?.Id == null)
+		{
+			_logger.LogWarning("CallbackQuery or its Message/Chat is null.");
+			return;
+		}
+		long chatId = update.CallbackQuery.Message.Chat.Id;
+		ICallbackData data = JsonConvert.DeserializeObject<ICallbackData>(update.CallbackQuery?.Data, new CallbackDataConverter());
+		await _callbackDispatcher.DispatchAsync(chatId, data, cancellationToken);
 	}
 
 	private async Task ProcessAnswer(long chatId, string userMessage, CancellationToken cancellationToken)
@@ -70,7 +95,7 @@ public class BotService
 		}
 
 		Question? question = await _questionRepository.GetOldestUnansweredQuestionAsync(user.Id);
-		
+
 		if (question == null)
 			return;
 
@@ -116,6 +141,15 @@ public class BotService
 			await _questionRepository.SaveChangesAsync(cancellationToken);
 
 			await _botClient.SendMessage(chatId, "Incorrect. Please try again.", cancellationToken: cancellationToken, replyParameters: question.MessageId);
+		}
+	}
+
+	private async Task HandleReadyButtonClick(long chatId, CancellationToken cancellationToken)
+	{
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId, cancellationToken);
+		if (user != null)
+		{
+			await _hiraganaService.HandleReadyButtonClick(chatId, user.Id, cancellationToken);
 		}
 	}
 

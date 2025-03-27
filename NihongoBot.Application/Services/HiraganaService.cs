@@ -1,6 +1,9 @@
+using System.Text.Json;
+
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Helpers;
+using NihongoBot.Application.Models;
 using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Enums;
@@ -8,7 +11,7 @@ using NihongoBot.Domain.Interfaces.Repositories;
 
 using Telegram.Bot;
 using Telegram.Bot.Types;
-
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace NihongoBot.Application.Services;
 
@@ -43,15 +46,6 @@ public class HiraganaService
 			_logger.LogWarning("No Kana found in the database.");
 			return;
 		}
-
-
-		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(kana.Character);
-		Stream stream = new MemoryStream(imageBytes);
-
-		Message message = await _botClient.SendPhoto(telegramId,
-		InputFile.FromStream(stream, "hiragana.png"),
-		caption: $"What is the Romaji for this {kana.Character} Hiragana character?", cancellationToken: cancellationToken);
-
 		//save the Question to the database
 		Question question = new()
 		{
@@ -60,11 +54,52 @@ public class HiraganaService
 			QuestionText = kana.Character,
 			CorrectAnswer = kana.Romaji,
 			SentAt = DateTime.UtcNow,
-			MessageId = message.MessageId,
-			TimeLimit = 5 // Set the time limit to 5 minutes
+			TimeLimit = 1,
 		};
 
-		await _questionRepository.AddAsync(question, cancellationToken);
+		question = await _questionRepository.AddAsync(question, cancellationToken);
 		await _questionRepository.SaveChangesAsync(cancellationToken);
+
+		await SendReadyMessageAsync(telegramId, question.Id, cancellationToken);
+	}
+
+	public async Task SendQuestion(long telegramId, Question question, CancellationToken cancellationToken)
+	{
+		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(question.QuestionText);
+		Stream stream = new MemoryStream(imageBytes);
+
+		Message message = await _botClient.SendPhoto(telegramId,
+		InputFile.FromStream(stream, "hiragana.png"),
+		caption: $"What is the Romaji for this {question.QuestionText} character?", cancellationToken: cancellationToken);
+
+		question.MessageId = message.MessageId;
+		question.IsAccepted = true;
+		await _questionRepository.SaveChangesAsync(cancellationToken);
+	}
+
+	private async Task SendReadyMessageAsync(long telegramId, Guid QuestionId, CancellationToken cancellationToken)
+	{
+		_logger.LogInformation("Sending 'Ready for another challenge?' message at {Time}", DateTime.Now);
+
+		ReadyCallbackData callbackData = new()
+		{
+			QuestionId = QuestionId
+		};
+		InlineKeyboardMarkup inlineKeyboard = new(
+		new[]
+		{
+			InlineKeyboardButton.WithCallbackData("Ready",  JsonSerializer.Serialize(callbackData))
+		});
+
+		await _botClient.SendMessage(
+			chatId: telegramId,
+			text: "Are you ready for another challenge?",
+			replyMarkup: inlineKeyboard,
+			cancellationToken: cancellationToken);
+	}
+
+	public async Task HandleReadyButtonClick(long telegramId, Guid userId, CancellationToken cancellationToken)
+	{
+		await SendHiraganaMessage(telegramId, userId, cancellationToken);
 	}
 }
