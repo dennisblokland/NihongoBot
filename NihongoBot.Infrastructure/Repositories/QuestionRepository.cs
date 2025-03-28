@@ -13,6 +13,7 @@ public class QuestionRepository(IServiceProvider serviceProvider) : AbstractDoma
 	public async Task<IEnumerable<Question>> GetExpiredPendingAcceptanceQuestionsAsync(CancellationToken cancellationToken = default)
 	{
 		return await DatabaseSet
+			.AsNoTracking()
 			.Where(q =>
 				!q.IsAnswered &&
 				!q.IsExpired &&
@@ -25,6 +26,7 @@ public class QuestionRepository(IServiceProvider serviceProvider) : AbstractDoma
 	public async Task<IEnumerable<Question>> GetExpiredQuestionsAsync(CancellationToken cancellationToken = default)
 	{
 		return await DatabaseSet
+			.AsNoTracking()
 			.Where(q =>
 				!q.IsAnswered &&
 				!q.IsExpired &&
