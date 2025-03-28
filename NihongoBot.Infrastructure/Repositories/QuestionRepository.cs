@@ -27,8 +27,8 @@ public class QuestionRepository(IServiceProvider serviceProvider) : AbstractDoma
 		return await DatabaseSet
 			.Where(q =>
 				!q.IsAnswered &&
-				!q.IsExpired && 
-				!q.IsAccepted &&
+				!q.IsExpired &&
+				q.IsAccepted &&
 				q.SentAt.AddMinutes(q.TimeLimit) <= DateTime.UtcNow
 			)
 			.ToListAsync(cancellationToken);
@@ -40,8 +40,8 @@ public class QuestionRepository(IServiceProvider serviceProvider) : AbstractDoma
 		.OrderBy(q => q.SentAt)
 		.FirstOrDefaultAsync(q =>
 			q.UserId == id &&
-			q.IsAnswered == false &&
-			q.IsExpired == false,
+			!q.IsAnswered &&
+			!q.IsExpired,
 		cancellationToken
 		);
 	}
