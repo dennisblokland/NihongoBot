@@ -46,14 +46,13 @@ public class HiraganaService
 			_logger.LogWarning("No Kana found in the database.");
 			return;
 		}
-		//save the Question to the database
+
 		Question question = new()
 		{
 			UserId = userId,
 			QuestionType = QuestionType.Hiragana,
 			QuestionText = kana.Character,
 			CorrectAnswer = kana.Romaji,
-			SentAt = DateTime.UtcNow,
 			TimeLimit = 1,
 		};
 
@@ -69,10 +68,12 @@ public class HiraganaService
 		Stream stream = new MemoryStream(imageBytes);
 
 		Message message = await _botClient.SendPhoto(telegramId,
-		InputFile.FromStream(stream, "hiragana.png"),
-		caption: $"What is the Romaji for this {question.QuestionText} character?", cancellationToken: cancellationToken);
+			InputFile.FromStream(stream, "hiragana.png"),
+			caption: $"What is the Romaji for this {question.QuestionText} character?",
+			cancellationToken: cancellationToken);
 
 		question.MessageId = message.MessageId;
+		question.SentAt = DateTime.UtcNow;
 		question.IsAccepted = true;
 		await _questionRepository.SaveChangesAsync(cancellationToken);
 	}
@@ -96,10 +97,5 @@ public class HiraganaService
 			text: "Are you ready for another challenge?",
 			replyMarkup: inlineKeyboard,
 			cancellationToken: cancellationToken);
-	}
-
-	public async Task HandleReadyButtonClick(long telegramId, Guid userId, CancellationToken cancellationToken)
-	{
-		await SendHiraganaMessage(telegramId, userId, cancellationToken);
 	}
 }

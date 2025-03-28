@@ -144,15 +144,6 @@ public class BotService
 		}
 	}
 
-	private async Task HandleReadyButtonClick(long chatId, CancellationToken cancellationToken)
-	{
-		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId, cancellationToken);
-		if (user != null)
-		{
-			await _hiraganaService.HandleReadyButtonClick(chatId, user.Id, cancellationToken);
-		}
-	}
-
 	public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 	{
 		string errorMessage = exception switch

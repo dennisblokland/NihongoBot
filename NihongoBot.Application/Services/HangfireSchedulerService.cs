@@ -58,13 +58,6 @@ public class HangfireSchedulerService
 			Cron.Minutely
 		);
 
-		 // Schedule a job to check for unanswered confirmation messages every minute
-        _recurringJobManager.AddOrUpdate(
-            "CheckUnansweredConfirmationMessages",
-            () => CheckUnansweredQuestions(CancellationToken.None),
-            Cron.Minutely
-        );
-
 		_logger.LogInformation("Hiragana jobs scheduled successfully.");
 	}
 
@@ -172,28 +165,4 @@ public class HangfireSchedulerService
 
 		await _questionRepository.SaveChangesAsync(cancellationToken);
 	}
-
-	public async Task CheckUnansweredQuestions(CancellationToken cancellationToken)
-    {
-        IEnumerable<Question> unansweredQuestions = await _questionRepository.GetExpiredQuestionsAsync(cancellationToken);
-
-        foreach (Question question in unansweredQuestions)
-        {
-            if (!question.IsAnswered && !question.IsExpired && question.SentAt.AddHours(1) <= DateTime.UtcNow)
-            {
-                question.IsExpired = true;
-
-                User? user = await _userRepository.FindByIdAsync(question.UserId, cancellationToken);
-                if (user != null)
-                {
-                    user.ResetStreak();
-                    await _botClient.SendMessage(user.TelegramId,
-                        "You didn't confirm the challenge in time. The correct answer was " + question.CorrectAnswer,
-                        replyParameters: question.MessageId, cancellationToken: cancellationToken);
-                }
-            }
-        }
-
-        await _questionRepository.SaveChangesAsync(cancellationToken);
-    }
 }
