@@ -144,6 +144,7 @@ public class HangfireSchedulerService
 				replyParameters: question.MessageId, cancellationToken: cancellationToken);
 
 			}
+			_questionRepository.Update(question);
 		}
 
 		IEnumerable<Question> unansweredQuestions = await _questionRepository.GetExpiredPendingAcceptanceQuestionsAsync(cancellationToken);
@@ -160,6 +161,7 @@ public class HangfireSchedulerService
 					"You didn't confirm the challenge in time. Your streak has been reset",
 					replyParameters: question.MessageId, cancellationToken: cancellationToken);
 			}
+			_questionRepository.Update(question);
 		}
 
 

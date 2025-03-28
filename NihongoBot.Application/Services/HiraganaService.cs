@@ -75,6 +75,8 @@ public class HiraganaService
 		question.MessageId = message.MessageId;
 		question.SentAt = DateTime.UtcNow;
 		question.IsAccepted = true;
+		_questionRepository.Update(question);
+
 		await _questionRepository.SaveChangesAsync(cancellationToken);
 	}
 
