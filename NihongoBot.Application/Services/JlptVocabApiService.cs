@@ -14,7 +14,7 @@ namespace NihongoBot.Application.Services
             _httpClient = httpClient;
         }
 
-        public async Task<JLPTWord?> GetRandomWordAsync(int level = 1)
+        public async Task<JLPTWord?> GetRandomWordAsync(int level = 5)
         {
             JLPTWord? response = await _httpClient.GetFromJsonAsync<JLPTWord>($"random?level={level}");
 			return response;
