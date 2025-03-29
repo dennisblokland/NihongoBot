@@ -99,6 +99,11 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<CommandDispatcher>();
 		services.AddScoped<CallbackDispatcher>();
 
+		services.AddHttpClient<JlptVocabApiService>(client =>
+		{
+			client.BaseAddress = new Uri("https://jlpt-vocab-api.vercel.app/api/words/");
+		});
+
 	}
 }
 

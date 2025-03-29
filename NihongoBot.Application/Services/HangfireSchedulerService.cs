@@ -4,6 +4,7 @@ using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Helpers;
+using NihongoBot.Application.Models;
 using NihongoBot.Domain;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Interfaces.Repositories;
@@ -20,6 +21,7 @@ public class HangfireSchedulerService
 	private readonly IRecurringJobManager _recurringJobManager;
 	private readonly ITelegramBotClient _botClient;
     private readonly JobStorage _jobStorage;
+	private readonly JlptVocabApiService _jlptVocabApiService;
 
 	public HangfireSchedulerService(
 		IUserRepository userRepository,
@@ -27,7 +29,8 @@ public class HangfireSchedulerService
 		ITelegramBotClient botClient,
 		IRecurringJobManager recurringJobManager,
 		ILogger<HangfireSchedulerService> logger,
-		JobStorage jobStorage)
+		JobStorage jobStorage,
+		JlptVocabApiService jlptVocabApiService)
 	{
 		_logger = logger;
 		_botClient = botClient;
@@ -35,6 +38,7 @@ public class HangfireSchedulerService
 		_questionRepository = questionRepository;
 		_recurringJobManager = recurringJobManager;
 		_jobStorage = jobStorage;
+		_jlptVocabApiService = jlptVocabApiService;
 	}
 
 	public async Task InitializeSchedulerAsync()
@@ -58,7 +62,37 @@ public class HangfireSchedulerService
 			Cron.Minutely
 		);
 
+		_recurringJobManager.AddOrUpdate(
+			"SendWordOfTheDay",
+			//Hangfire replaces the CancellationToken internally
+			() => SendWordOfTheDay(CancellationToken.None),
+			// TODO: timezone of the user
+			Cron.Daily(12, 0) // 12:00 PM UTC
+		);
+
 		_logger.LogInformation("Hiragana jobs scheduled successfully.");
+	}
+
+	public async Task SendWordOfTheDay(CancellationToken none)
+	{
+		JLPTWord? word = await _jlptVocabApiService.GetRandomWordAsync();
+		if (word == null)
+		{
+			_logger.LogError("Failed to retrieve word of the day.");
+			return;
+		}
+		IEnumerable<User> users = await _userRepository.GetAsync();
+		foreach (User user in users)
+		{
+			await _botClient.SendMessage(user.TelegramId,
+				$"<b>Word of the Day</b>\n\n" +
+				$"<b>Word:</b> {word.Word}\n" +
+				$"<b>Romaji:</b> {word.Romaji}\n" +
+				$"<b>Meaning:</b> {word.Meaning}\n" +
+				$"<b>Furigana:</b> {word.Furigana}",
+				parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+				cancellationToken: none);
+		}
 	}
 
 	public async Task ScheduleHiraganaJobs()
