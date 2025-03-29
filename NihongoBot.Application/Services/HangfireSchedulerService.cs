@@ -4,6 +4,7 @@ using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Helpers;
+using NihongoBot.Application.Interfaces;
 using NihongoBot.Application.Models;
 using NihongoBot.Domain;
 using NihongoBot.Domain.Entities;
@@ -21,7 +22,7 @@ public class HangfireSchedulerService
 	private readonly IRecurringJobManager _recurringJobManager;
 	private readonly ITelegramBotClient _botClient;
     private readonly JobStorage _jobStorage;
-	private readonly JlptVocabApiService _jlptVocabApiService;
+	private readonly IJlptVocabApiService _jlptVocabApiService;
 
 	public HangfireSchedulerService(
 		IUserRepository userRepository,
@@ -30,7 +31,7 @@ public class HangfireSchedulerService
 		IRecurringJobManager recurringJobManager,
 		ILogger<HangfireSchedulerService> logger,
 		JobStorage jobStorage,
-		JlptVocabApiService jlptVocabApiService)
+		IJlptVocabApiService jlptVocabApiService)
 	{
 		_logger = logger;
 		_botClient = botClient;

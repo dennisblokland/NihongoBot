@@ -10,13 +10,13 @@ using Moq;
 using NihongoBot.Application.Services;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Interfaces.Repositories;
-using NihongoBot.Persistence;
 
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Requests;
 using User = NihongoBot.Domain.User;
 using Hangfire.Common;
+using NihongoBot.Application.Interfaces;
 
 namespace NihongoBot.Application.Tests.Services;
 
@@ -27,8 +27,8 @@ public class HangfireSchedulerServiceTest
 	private readonly Mock<IRecurringJobManager> _recurringJobManagerMock = new();
 	private readonly Mock<ITelegramBotClient> _botClientMock = new();
 	private readonly Mock<ILogger<HangfireSchedulerService>> _loggerMock = new();
-	private readonly Mock<AppDbContext> _dbContextMock = new();
 	private readonly Mock<JobStorage> _jobStorage = new();
+	private readonly Mock<IJlptVocabApiService> _jlptVocabApiService = new();
 	private readonly HangfireSchedulerService _hangfireSchedulerService;
 	private readonly Fixture _fixture = new();
 
@@ -40,7 +40,8 @@ public class HangfireSchedulerServiceTest
 			_botClientMock.Object,
 			_recurringJobManagerMock.Object,
 			_loggerMock.Object,
-			_jobStorage.Object
+			_jobStorage.Object,
+			_jlptVocabApiService.Object
 		);
 	}
 

@@ -1,11 +1,11 @@
 using System.Net.Http.Json;
-using System.Text.Json;
 
+using NihongoBot.Application.Interfaces;
 using NihongoBot.Application.Models;
 
 namespace NihongoBot.Application.Services
 {
-    public class JlptVocabApiService
+    public class JlptVocabApiService : IJlptVocabApiService
     {
         private readonly HttpClient _httpClient;
 
