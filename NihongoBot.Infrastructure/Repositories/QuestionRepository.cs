@@ -18,7 +18,7 @@ public class QuestionRepository(IServiceProvider serviceProvider) : AbstractDoma
 				!q.IsAnswered &&
 				!q.IsExpired &&
 				!q.IsAccepted &&
-				q.SentAt.AddHours(1) <= DateTime.UtcNow
+				q.CreatedAt.AddHours(1) <= DateTime.UtcNow
 			)
 			.ToListAsync(cancellationToken);
 	}
