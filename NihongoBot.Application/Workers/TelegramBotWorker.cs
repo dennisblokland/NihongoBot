@@ -46,11 +46,12 @@ public class TelegramBotWorker : IHostedService
         return Task.CompletedTask;
     }
 
-	  public static readonly List<BotCommand> Commands =
+	public static readonly List<BotCommand> Commands =
     [
         new BotCommand { Command = "start", Description = "Start interacting with NihongoBot" },
         new BotCommand { Command = "streak", Description = "Check your current streak" },
         new BotCommand { Command = "resetstreak", Description =  "Reset your current streak" },
+        new BotCommand { Command = "leaderboard", Description =  "Check the leaderboard" },
     ];
 
 }
