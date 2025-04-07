@@ -192,11 +192,13 @@ public class HangfireSchedulerService
 			if (user != null)
 			{
 				user.ResetStreak();
+				_userRepository.Update(user);
 				await _botClient.SendMessage(user.TelegramId,
 					"You didn't confirm the challenge in time. Your streak has been reset",
 					replyParameters: question.MessageId, cancellationToken: cancellationToken);
 			}
 			_questionRepository.Update(question);
+	
 		}
 
 

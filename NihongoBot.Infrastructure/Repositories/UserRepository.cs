@@ -12,6 +12,6 @@ public class UserRepository(IServiceProvider serviceProvider) : AbstractDomainRe
 {
 	public async Task<User?> GetByTelegramIdAsync(long chatId, CancellationToken cancellationToken = default)
 	{
-		return await DatabaseSet.FirstOrDefaultAsync(x => x.TelegramId == chatId);
+		return await DatabaseSet.FirstOrDefaultAsync(x => x.TelegramId == chatId, cancellationToken: cancellationToken);
 	}
 }
