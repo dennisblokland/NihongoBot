@@ -33,4 +33,24 @@ public class UserRepository(IServiceProvider serviceProvider) : AbstractDomainRe
 		var result = await users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 		return result?.Rank ?? -1;
 	}
+
+	public async Task UpdateQuestionsPerDayAsync(Guid userId, int questionsPerDay, CancellationToken cancellationToken = default)
+	{
+		User? user = await DatabaseSet.FindAsync(new object[] { userId }, cancellationToken);
+		if (user != null)
+		{
+			user.UpdateQuestionsPerDay(questionsPerDay);
+			await SaveChangesAsync(cancellationToken);
+		}
+	}
+
+	public async Task UpdateWordOfTheDayEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default)
+	{
+		User? user = await DatabaseSet.FindAsync(new object[] { userId }, cancellationToken);
+		if (user != null)
+		{
+			user.UpdateWordOfTheDayEnabled(enabled);
+			await SaveChangesAsync(cancellationToken);
+		}
+	}
 }
