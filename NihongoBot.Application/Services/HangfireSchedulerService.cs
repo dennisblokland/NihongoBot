@@ -85,14 +85,17 @@ public class HangfireSchedulerService
 		IEnumerable<User> users = await _userRepository.GetAsync();
 		foreach (User user in users)
 		{
-			await _botClient.SendMessage(user.TelegramId,
-				$"<b>Word of the Day</b>\n\n" +
-				$"<b>Word:</b> {word.Word}\n" +
-				$"<b>Romaji:</b> {word.Romaji}\n" +
-				$"<b>Meaning:</b> {word.Meaning}\n" +
-				$"<b>Furigana:</b> {word.Furigana}",
-				parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-				cancellationToken: none);
+			if (user.WordOfTheDayEnabled)
+			{
+				await _botClient.SendMessage(user.TelegramId,
+					$"<b>Word of the Day</b>\n\n" +
+					$"<b>Word:</b> {word.Word}\n" +
+					$"<b>Romaji:</b> {word.Romaji}\n" +
+					$"<b>Meaning:</b> {word.Meaning}\n" +
+					$"<b>Furigana:</b> {word.Furigana}",
+					parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+					cancellationToken: none);
+			}
 		}
 	}
 
@@ -101,9 +104,9 @@ public class HangfireSchedulerService
 		IEnumerable<User> users = await _userRepository.GetAsync();
 
 		foreach (User user in users)
-		{
-			ScheduleHiraganaJobsForUser(user);
-		}
+			{
+				ScheduleHiraganaJobsForUser(user);
+			}
 	}
 
 	public void ScheduleHiraganaJobsForUser(User user)
@@ -111,7 +114,7 @@ public class HangfireSchedulerService
 		List<RecurringJobDto> currentJobs = [];
 		IStorageConnection conn = _jobStorage.GetConnection();
 
-		int jobCount = 2; // This can be replaced with a configuration value in the future
+		int jobCount = user.QuestionsPerDay; // Use user setting for job count
 		if (conn != null)
 		{
 			currentJobs = conn.GetRecurringJobs().Where(j => j.Id.Contains("SendHiragana_") && j.Id.Contains(user.Id.ToString())).ToList();
