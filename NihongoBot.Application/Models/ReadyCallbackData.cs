@@ -2,8 +2,9 @@ using NihongoBot.Application.Enums;
 
 namespace NihongoBot.Application.Models;
 
-public class ReadyCallbackData : ICallbackData 
+public class ReadyCallbackData : AbstractCallbackData 
 {
 	public Guid QuestionId { get; set; }
-	public CallBackType Type { get; } = CallBackType.ReadyForQuestion;
+	public override CallBackType Type  => CallBackType.ReadyForQuestion;
 }
+

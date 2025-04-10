@@ -1,3 +1,4 @@
+using NihongoBot.Application.Enums;
 using NihongoBot.Application.Models;
 using NihongoBot.Application.Services;
 using NihongoBot.Domain.Interfaces.Repositories;
@@ -21,7 +22,7 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
 
     public async Task HandleAsync(long chatId, SettingsOptionCallbackData callbackData, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByTelegramIdAsync(chatId, cancellationToken);
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId, cancellationToken);
         if (user == null)
         {
             await _botClient.SendMessage(chatId, "User not found.", cancellationToken: cancellationToken);
@@ -30,11 +31,11 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
 
         switch (callbackData.Setting)
         {
-            case "QuestionsPerDay":
+            case SettingType.QuestionsPerDay:
                 user.QuestionsPerDay = int.Parse(callbackData.Value);
-                await _schedulerService.ScheduleHiraganaJobsForUser(user);
+                _schedulerService.ScheduleHiraganaJobsForUser(user);
                 break;
-            case "WordOfTheDayEnabled":
+            case SettingType.WordOfTheDay:
                 user.WordOfTheDayEnabled = bool.Parse(callbackData.Value);
                 break;
             default:
@@ -43,6 +44,7 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
         }
 
         await _userRepository.SaveChangesAsync(cancellationToken);
-        await _botClient.SendMessage(chatId, "Settings updated successfully.", cancellationToken: cancellationToken);
+		await _botClient.EditMessageText(chatId, callbackData.MessageId!.Value, "Settings updated successfully.", cancellationToken: cancellationToken);
+
     }
 }

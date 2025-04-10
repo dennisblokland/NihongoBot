@@ -62,6 +62,8 @@ public static class ServiceCollectionExtensions
 										.UseDefaultTypeSerializer()
 										.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
 		services.AddScoped<RecurringJobManager>();
+		services.AddScoped<HangfireSchedulerService>();
+
 
 	}
 

@@ -2,9 +2,19 @@ using NihongoBot.Application.Enums;
 
 namespace NihongoBot.Application.Models;
 
-public class SettingsOptionCallbackData : ICallbackData
+public class SettingsOptionCallbackData : AbstractCallbackData
 {
-    public CallBackType Type { get; } = CallBackType.SettingsOption;
-    public string Setting { get; set; }
+	internal SettingsOptionCallbackData() 
+	{
+		Value = string.Empty;
+	}
+	public SettingsOptionCallbackData(SettingType setting, string value)
+	{
+		Setting = setting;
+		Value = value;
+	}
+
+	public override CallBackType Type => CallBackType.SettingsOption;
+    public SettingType Setting { get; set; }
     public string Value { get; set; }
 }

@@ -84,7 +84,7 @@ public class BotService
 	{
 		SettingsMenuCallbackData callbackData = new()
 		{
-			MenuLevel = 1
+			MenuLevel = 1,
 		};
 		await _callbackDispatcher.DispatchAsync(chatId, callbackData, cancellationToken);
 	}
@@ -98,7 +98,7 @@ public class BotService
 		}
 		long chatId = update.CallbackQuery.Message.Chat.Id;
 		ICallbackData data = JsonConvert.DeserializeObject<ICallbackData>(update.CallbackQuery?.Data, new CallbackDataConverter());
-		await _callbackDispatcher.DispatchAsync(chatId, data, cancellationToken);
+		await _callbackDispatcher.DispatchAsync(chatId, data,cancellationToken);
 	}
 
 	private async Task ProcessAnswer(long chatId, string userMessage, CancellationToken cancellationToken)
