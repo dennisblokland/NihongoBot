@@ -14,5 +14,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
 		builder.Property(u => u.Username).IsRequired(false);
 		builder.Property(u => u.Streak).HasDefaultValue(0);
+		builder.Property(u => u.QuestionsPerDay).HasDefaultValue(2);
+		builder.Property(u => u.WordOfTheDayEnabled).HasDefaultValue(true);
     }
 }

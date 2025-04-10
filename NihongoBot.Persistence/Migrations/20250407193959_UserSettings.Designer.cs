@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NihongoBot.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NihongoBot.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250407193959_UserSettings")]
+    partial class UserSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -598,8 +601,7 @@ namespace NihongoBot.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("QuestionsPerDay")
-                        .HasColumnType("integer")
-						.HasDefaultValue(2);
+                        .HasColumnType("integer");
 
                     b.Property<int>("Streak")
                         .ValueGeneratedOnAdd()
@@ -616,8 +618,7 @@ namespace NihongoBot.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("WordOfTheDayEnabled")
-                        .HasColumnType("boolean")
-						.HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 

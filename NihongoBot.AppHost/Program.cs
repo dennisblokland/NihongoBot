@@ -1,7 +1,7 @@
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("Postgres")
 						.WithDataVolume(isReadOnly: false)
-						.WithPgAdmin();
+						.WithPgAdmin(x => x.WithImage("dpage/pgadmin4"));
 
 IResourceBuilder<PostgresDatabaseResource> postgresdb = postgres.AddDatabase("NihongoBotDB");
 

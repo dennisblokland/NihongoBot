@@ -73,11 +73,20 @@ public class HangfireSchedulerServiceTest
 			It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
 	}
 
-	[Fact]
-	public async Task ScheduleHiraganaJobs_ShouldScheduleJobsForAllUsers()
+	[Theory]
+	[InlineData(1)]
+	[InlineData(2)]
+	[InlineData(3)]
+	[InlineData(4)]
+	[InlineData(5)]
+	[InlineData(6)]
+	public async Task ScheduleHiraganaJobs_ShouldScheduleJobsForAllUsers_WithDifferentQuestionsPerDay(int questionsPerDay)
 	{
 		// Arrange
-		List<User> users = _fixture.CreateMany<User>(2).ToList();
+		List<User> users = _fixture.Build<User>()
+			.With(u => u.QuestionsPerDay, questionsPerDay)
+			.CreateMany(2)
+			.ToList();
 
 		_userRepositoryMock
 			.Setup(repo => repo.GetAsync(It.IsAny<CancellationToken>()))
@@ -91,10 +100,9 @@ public class HangfireSchedulerServiceTest
 		{
 			_recurringJobManagerMock.Verify(manager => manager.AddOrUpdate(
 				It.Is<string>(jobId => jobId.Contains($"SendHiragana_") && jobId.Contains(user.Id.ToString())),
-			It.IsAny<Job>(),
-			It.IsAny<string>(),
-			It.IsAny<RecurringJobOptions>()), Times.AtLeastOnce);
-
+				It.IsAny<Job>(),
+				It.IsAny<string>(),
+				It.IsAny<RecurringJobOptions>()), Times.Exactly(questionsPerDay));
 		}
 	}
 
@@ -139,7 +147,9 @@ public class HangfireSchedulerServiceTest
 	public void ScheduleHiraganaJobsForUser_ShouldAddOrUpdateJobs()
 	{
 		// Arrange
-		User user = _fixture.Create<User>();
+		User user = _fixture.Build<User>()
+			.With(u => u.QuestionsPerDay, 2)
+			.Create();
 		Mock<IStorageConnection> jobStorageMock = new Mock<IStorageConnection>();
 		JobStorage.Current = Mock.Of<JobStorage>(storage => storage.GetConnection() == jobStorageMock.Object);
 
