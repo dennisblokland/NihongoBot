@@ -14,7 +14,7 @@ namespace NihongoBot.Domain
 
         public int Streak { get; private set; } = 0;
 
-        public int QuestionsPerDay { get; set; } = 1;
+        public int QuestionsPerDay { get; set; } = 2;
         public bool WordOfTheDayEnabled { get; set; } = true;
 
         public void IncreaseStreak()
