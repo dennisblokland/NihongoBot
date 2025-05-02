@@ -18,6 +18,7 @@ builder.Configuration
 			.Build();
 
 builder.Services.AddInfrastructureServices();
+
 builder.Services.AddHangfireServer(options => options.ServerName = "Hangfire Server");
 
 builder.Services.AddScoped<HiraganaService>();

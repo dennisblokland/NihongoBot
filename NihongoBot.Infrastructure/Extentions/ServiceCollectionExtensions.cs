@@ -57,10 +57,18 @@ public static class ServiceCollectionExtensions
 
 	private static void AddHangfire(this IServiceCollection services, string connectionString)
 	{
-		services.AddHangfire(config => config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+		services.AddHangfire(config =>
+		{
+			config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
 										.UseSimpleAssemblyNameTypeSerializer()
 										.UseDefaultTypeSerializer()
-										.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
+										.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString));
+			GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute
+			{
+				Attempts = 3,
+				OnAttemptsExceeded = AttemptsExceededAction.Delete
+			});
+		});
 		services.AddScoped<RecurringJobManager>();
 
 	}

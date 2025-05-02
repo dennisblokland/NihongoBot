@@ -11,6 +11,7 @@ using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Interfaces.Repositories;
 
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 
 namespace NihongoBot.Application.Services;
 
@@ -21,7 +22,7 @@ public class HangfireSchedulerService
 	private readonly IQuestionRepository _questionRepository;
 	private readonly IRecurringJobManager _recurringJobManager;
 	private readonly ITelegramBotClient _botClient;
-    private readonly JobStorage _jobStorage;
+	private readonly JobStorage _jobStorage;
 	private readonly IJlptVocabApiService _jlptVocabApiService;
 
 	public HangfireSchedulerService(
@@ -172,11 +173,27 @@ public class HangfireSchedulerService
 			User? user = await _userRepository.FindByIdAsync(question.UserId, cancellationToken);
 			if (user != null)
 			{
-				user.ResetStreak();
-				// reply to the original message with the correct answer
-				await _botClient.SendMessage(user.TelegramId,
-				"You've reached the time limit. The correct answer was " + question.CorrectAnswer,
-				replyParameters: question.MessageId, cancellationToken: cancellationToken);
+				try
+				{
+					await _botClient.SendMessage(user.TelegramId,
+					"You've reached the time limit. The correct answer was " + question.CorrectAnswer,
+					replyParameters: question.MessageId, cancellationToken: cancellationToken);
+				}
+				catch (ApiRequestException ex) when (ex.Message.Contains("message to be replied not found"))
+				{
+					_logger.LogError(ex, "Failed to send message to user {UserId}: Message to be replied not found", user.Id);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "Failed to send message to user {UserId}", user.Id);
+					throw;
+				}
+				finally
+				{
+					user.ResetStreak();
+					_userRepository.Update(user);
+				}
+
 
 			}
 			_questionRepository.Update(question);
@@ -191,14 +208,29 @@ public class HangfireSchedulerService
 			User? user = await _userRepository.FindByIdAsync(question.UserId, cancellationToken);
 			if (user != null)
 			{
-				user.ResetStreak();
-				_userRepository.Update(user);
-				await _botClient.SendMessage(user.TelegramId,
-					"You didn't confirm the challenge in time. Your streak has been reset",
-					replyParameters: question.MessageId, cancellationToken: cancellationToken);
+				try
+				{
+					await _botClient.SendMessage(user.TelegramId,
+						"You didn't confirm the challenge in time. Your streak has been reset",
+						replyParameters: question.MessageId, cancellationToken: cancellationToken);
+				}
+				catch (ApiRequestException ex) when (ex.Message.Contains("message to be replied not found"))
+				{
+					_logger.LogError(ex, "Failed to send message to user {UserId}: Message to be replied not found", user.Id);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "Failed to send message to user {UserId}", user.Id);
+					throw;
+				}
+				finally
+				{
+					user.ResetStreak();
+					_userRepository.Update(user);
+				}
 			}
 			_questionRepository.Update(question);
-	
+
 		}
 
 
