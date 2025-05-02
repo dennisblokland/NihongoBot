@@ -70,6 +70,8 @@ public static class ServiceCollectionExtensions
 			});
 		});
 		services.AddScoped<RecurringJobManager>();
+		services.AddScoped<HangfireSchedulerService>();
+
 
 	}
 

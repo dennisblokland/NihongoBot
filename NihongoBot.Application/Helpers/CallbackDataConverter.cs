@@ -23,6 +23,12 @@ public class CallbackDataConverter : JsonConverter<ICallbackData>
             case CallBackType.ReadyForQuestion:
                 target = new ReadyCallbackData();
                 break;
+			case CallBackType.SettingsMenu:
+				target = new SettingsMenuCallbackData();
+				break;
+			case CallBackType.SettingsOption:
+				target = new SettingsOptionCallbackData();
+				break;
             // Add other cases here for different actions/types
             default:
                 throw new NotSupportedException($"Action '{action}' is not supported.");

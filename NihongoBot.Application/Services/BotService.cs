@@ -70,19 +70,35 @@ public class BotService
 	{
 		string[] args = command.Split(' ');
 		string commandName = args[0].Substring(1); // Remove the leading '/'
-		await _commandDispatcher.DispatchAsync(chatId, commandName, args.Skip(1).ToArray(), cancellationToken);
+		if (commandName == "settings")
+		{
+			await ShowSettingsMenu(chatId, cancellationToken);
+		}
+		else
+		{
+			await _commandDispatcher.DispatchAsync(chatId, commandName, args.Skip(1).ToArray(), cancellationToken);
+		}
+	}
+
+	private async Task ShowSettingsMenu(long chatId, CancellationToken cancellationToken)
+	{
+		SettingsMenuCallbackData callbackData = new()
+		{
+			MenuLevel = 1,
+		};
+		await _callbackDispatcher.DispatchAsync(chatId, callbackData, cancellationToken);
 	}
 
 	private async Task HandleCallback(Update update, CancellationToken cancellationToken)
 	{
 		if (update.CallbackQuery?.Message?.Chat?.Id == null)
 		{
-			_logger.LogWarning("CallbackQuery or its Message/Chat is null.");
-			return;
+				_logger.LogWarning("CallbackQuery or its Message/Chat is null.");
+				return;
 		}
 		long chatId = update.CallbackQuery.Message.Chat.Id;
 		ICallbackData data = JsonConvert.DeserializeObject<ICallbackData>(update.CallbackQuery?.Data, new CallbackDataConverter());
-		await _callbackDispatcher.DispatchAsync(chatId, data, cancellationToken);
+		await _callbackDispatcher.DispatchAsync(chatId, data,cancellationToken);
 	}
 
 	private async Task ProcessAnswer(long chatId, string userMessage, CancellationToken cancellationToken)

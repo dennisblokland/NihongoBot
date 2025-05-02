@@ -49,6 +49,7 @@ public class TelegramBotWorker : IHostedService
 	public static readonly List<BotCommand> Commands =
     [
         new BotCommand { Command = "start", Description = "Start interacting with NihongoBot" },
+        new BotCommand { Command = "settings", Description = "NihongoBot settings" },
         new BotCommand { Command = "streak", Description = "Check your current streak" },
         new BotCommand { Command = "resetstreak", Description =  "Reset your current streak" },
         new BotCommand { Command = "leaderboard", Description =  "Check the leaderboard" },

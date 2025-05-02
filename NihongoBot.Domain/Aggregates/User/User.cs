@@ -14,14 +14,27 @@ namespace NihongoBot.Domain
 
         public int Streak { get; private set; } = 0;
 
-		public void IncreaseStreak()
-		{
-			Streak++;
-		}
+        public int QuestionsPerDay { get; set; } = 2;
+        public bool WordOfTheDayEnabled { get; set; } = true;
 
-		public void ResetStreak()
-		{
-			Streak = 0;
-		}
+        public void IncreaseStreak()
+        {
+            Streak++;
+        }
+
+        public void ResetStreak()
+        {
+            Streak = 0;
+        }
+
+        public void UpdateQuestionsPerDay(int questionsPerDay)
+        {
+            QuestionsPerDay = questionsPerDay;
+        }
+
+        public void UpdateWordOfTheDayEnabled(bool enabled)
+        {
+            WordOfTheDayEnabled = enabled;
+        }
     }
 }

@@ -22,7 +22,6 @@ builder.Services.AddInfrastructureServices();
 builder.Services.AddHangfireServer(options => options.ServerName = "Hangfire Server");
 
 builder.Services.AddScoped<HiraganaService>();
-builder.Services.AddScoped<HangfireSchedulerService>();
 
 using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope())
 {

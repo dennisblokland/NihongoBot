@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using NihongoBot.Application.Enums;
 using NihongoBot.Application.Handlers;
 using NihongoBot.Application.Models;
 
@@ -14,8 +15,18 @@ namespace NihongoBot.Application.Services
 			_serviceProvider = serviceProvider;
 		}
 
-		public async Task DispatchAsync(long chatId, ICallbackData callbackData, CancellationToken cancellationToken)
+		public async Task DispatchAsync(long chatId ,ICallbackData callbackData, CancellationToken cancellationToken = default)
 		{
+			if (callbackData == null)
+			{
+				throw new ArgumentNullException(nameof(callbackData));
+			}
+
+			if (callbackData.Type == CallBackType.Unknown)
+			{
+				throw new ArgumentException("Unknown callback type.", nameof(callbackData));
+			}
+	
 			string? enumName = Enum.GetName(callbackData.Type);
 			if (enumName == null)
 			{
@@ -51,8 +62,11 @@ namespace NihongoBot.Application.Services
 							if (handleMethod != null)
 							{
 								// Invoke the method. Since it returns a Task, cast and await it.
-								Task task = (Task) handleMethod.Invoke(handlerInstance, [chatId, callbackData, cancellationToken]);
-								await task;
+								object? result = handleMethod.Invoke(handlerInstance, [chatId, callbackData, cancellationToken]);
+								if (result is Task task)
+								{
+									await task;
+								}
 							}
 						}
 					}
