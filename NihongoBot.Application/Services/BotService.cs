@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
 
+using NihongoBot.Application.Enums;
 using NihongoBot.Application.Models;
 using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
@@ -97,8 +98,40 @@ public class BotService
 				return;
 		}
 		long chatId = update.CallbackQuery.Message.Chat.Id;
-		ICallbackData data = JsonConvert.DeserializeObject<ICallbackData>(update.CallbackQuery?.Data, new CallbackDataConverter());
+		ICallbackData data = ParseCallbackData(update.CallbackQuery?.Data);
 		await _callbackDispatcher.DispatchAsync(chatId, data,cancellationToken);
+	}
+
+	private ICallbackData ParseCallbackData(string? callbackData)
+	{
+		if (string.IsNullOrEmpty(callbackData))
+		{
+			throw new ArgumentException("Callback data is null or empty");
+		}
+
+		// Check if it's a compact format: "{type}|{data}"
+		string[] parts = callbackData.Split('|');
+		if (parts.Length >= 2 && int.TryParse(parts[0], out int typeValue))
+		{
+			CallBackType type = (CallBackType)typeValue;
+			
+			return type switch
+			{
+				CallBackType.ReadyForQuestion when parts.Length == 2 && Guid.TryParse(parts[1], out Guid questionId) =>
+					new ReadyCallbackData { QuestionId = questionId },
+				
+				CallBackType.SettingsMenu when parts.Length == 3 && int.TryParse(parts[1], out int menuLevel) && int.TryParse(parts[2], out int messageId) =>
+					new SettingsMenuCallbackData(menuLevel) { MessageId = messageId == 0 ? null : messageId },
+				
+				CallBackType.SettingsOption when parts.Length == 4 && int.TryParse(parts[1], out int settingTypeValue) && int.TryParse(parts[3], out int msgId) =>
+					new SettingsOptionCallbackData((SettingType)settingTypeValue, parts[2]) { MessageId = msgId == 0 ? null : msgId },
+				
+				_ => JsonConvert.DeserializeObject<ICallbackData>(callbackData, new CallbackDataConverter())
+			};
+		}
+
+		// Fall back to JSON deserialization for other formats
+		return JsonConvert.DeserializeObject<ICallbackData>(callbackData, new CallbackDataConverter());
 	}
 
 	private async Task ProcessAnswer(long chatId, string userMessage, CancellationToken cancellationToken)
