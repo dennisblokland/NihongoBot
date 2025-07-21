@@ -97,8 +97,25 @@ public class BotService
 				return;
 		}
 		long chatId = update.CallbackQuery.Message.Chat.Id;
-		ICallbackData data = JsonConvert.DeserializeObject<ICallbackData>(update.CallbackQuery?.Data, new CallbackDataConverter());
+		ICallbackData data = ParseCallbackData(update.CallbackQuery?.Data);
 		await _callbackDispatcher.DispatchAsync(chatId, data,cancellationToken);
+	}
+
+	private ICallbackData ParseCallbackData(string? callbackData)
+	{
+		if (string.IsNullOrEmpty(callbackData))
+		{
+			throw new ArgumentException("Callback data is null or empty");
+		}
+
+		// Check if it's the new compact format for ReadyForQuestion: "1|{guid}"
+		if (callbackData.StartsWith("1|") && Guid.TryParse(callbackData.Substring(2), out Guid questionId))
+		{
+			return new ReadyCallbackData { QuestionId = questionId };
+		}
+
+		// Fall back to JSON deserialization for other types
+		return JsonConvert.DeserializeObject<ICallbackData>(callbackData, new CallbackDataConverter());
 	}
 
 	private async Task ProcessAnswer(long chatId, string userMessage, CancellationToken cancellationToken)
