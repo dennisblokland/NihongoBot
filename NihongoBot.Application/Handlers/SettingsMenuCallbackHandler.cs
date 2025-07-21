@@ -72,6 +72,13 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 		return InlineKeyboardButton.WithCallbackData(textOverride ?? value, Serialize(data));
 	}
 
-	private static string Serialize(ICallbackData data) =>
-		JsonSerializer.Serialize((object)data);
+	private static string Serialize(ICallbackData data)
+	{
+		return data switch
+		{
+			SettingsMenuCallbackData menuData => $"{(int)CallBackType.SettingsMenu}|{menuData.MenuLevel}|{menuData.MessageId ?? 0}",
+			SettingsOptionCallbackData optionData => $"{(int)CallBackType.SettingsOption}|{(int)optionData.Setting}|{optionData.Value}|{optionData.MessageId ?? 0}",
+			_ => JsonSerializer.Serialize((object)data) // Fallback for other types
+		};
+	}
 }

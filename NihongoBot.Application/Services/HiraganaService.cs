@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 
+using NihongoBot.Application.Enums;
 using NihongoBot.Application.Helpers;
 using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
@@ -81,8 +82,8 @@ public class HiraganaService
 	{
 		_logger.LogInformation("Sending 'Ready for another challenge?' message at {Time}", DateTime.Now);
 
-		// Create compact callback data format: "1|{guid}" where 1 is ReadyForQuestion type
-		string callbackData = $"1|{QuestionId}";
+		// Create compact callback data format: "{type}|{guid}" where type is ReadyForQuestion
+		string callbackData = $"{(int)CallBackType.ReadyForQuestion}|{QuestionId}";
 		
 		InlineKeyboardMarkup inlineKeyboard = new(
 		new[]
