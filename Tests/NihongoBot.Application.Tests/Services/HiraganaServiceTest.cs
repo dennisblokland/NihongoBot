@@ -113,4 +113,57 @@ public class HiraganaServiceTest
 		_questionRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<Question>(), cancellationToken), Times.Never);
 		_questionRepositoryMock.Verify(repo => repo.SaveChangesAsync(cancellationToken), Times.Never);
 	}
+
+	[Fact]
+	public async Task SendMultipleChoiceHiraganaMessage_ShouldCreateQuestionWithOptions_WhenKanaIsFound()
+	{
+		// Arrange
+		long telegramId = 123456789L;
+		Guid userId = Guid.NewGuid();
+		CancellationToken cancellationToken = CancellationToken.None;
+
+		Kana kana = new()
+		{
+			Character = "つ",
+			Romaji = "tsu"
+		};
+
+		List<Kana> wrongAnswers = new List<Kana>
+		{
+			new() { Character = "か", Romaji = "ka" },
+			new() { Character = "く", Romaji = "ku" },
+			new() { Character = "こ", Romaji = "ko" }
+		};
+
+		_kanaRepositoryMock
+			.Setup(repo => repo.GetRandomAsync(KanaType.Hiragana, cancellationToken))
+			.ReturnsAsync(kana);
+
+		_kanaRepositoryMock
+			.Setup(repo => repo.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, 3, cancellationToken))
+			.ReturnsAsync(wrongAnswers);
+
+		_botClientMock
+			.Setup(client => client.SendRequest(
+				It.IsAny<SendPhotoRequest>(), 
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new Message());
+
+		_questionRepositoryMock
+			.Setup(repo => repo.AddAsync(It.IsAny<Question>(), cancellationToken))
+			.ReturnsAsync((Question q, CancellationToken ct) => q);
+
+		// Act
+		await _hiraganaService.SendMultipleChoiceHiraganaMessage(telegramId, userId, cancellationToken);
+
+		// Assert
+		_questionRepositoryMock.Verify(repo => repo.AddAsync(It.Is<Question>(q =>
+			q.UserId == userId &&
+			q.QuestionType == QuestionType.MultipleChoiceHiragana &&
+			q.QuestionText == kana.Character &&
+			q.CorrectAnswer == kana.Romaji &&
+			!string.IsNullOrEmpty(q.MultipleChoiceOptions)), cancellationToken), Times.Once);
+
+		_questionRepositoryMock.Verify(repo => repo.SaveChangesAsync(cancellationToken), Times.Exactly(2));
+	}
 }

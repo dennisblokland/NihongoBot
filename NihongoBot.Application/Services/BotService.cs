@@ -120,6 +120,9 @@ public class BotService
 				CallBackType.ReadyForQuestion when parts.Length == 2 && Guid.TryParse(parts[1], out Guid questionId) =>
 					new ReadyCallbackData { QuestionId = questionId },
 				
+				CallBackType.MultipleChoiceAnswer when parts.Length == 3 && Guid.TryParse(parts[1], out Guid mcQuestionId) =>
+					new MultipleChoiceAnswerCallbackData { QuestionId = mcQuestionId, SelectedAnswer = parts[2] },
+				
 				CallBackType.SettingsMenu when parts.Length == 3 && int.TryParse(parts[1], out int menuLevel) && int.TryParse(parts[2], out int messageId) =>
 					new SettingsMenuCallbackData(menuLevel) { MessageId = messageId == 0 ? null : messageId },
 				

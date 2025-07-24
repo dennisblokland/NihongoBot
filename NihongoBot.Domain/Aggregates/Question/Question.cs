@@ -10,6 +10,7 @@ namespace NihongoBot.Domain.Entities
 		public required string QuestionText { get; set; }  // The Hiragana/Katakana/Kanji/Word
 		public QuestionType QuestionType { get; set; }
 		public required string CorrectAnswer { get; set; }
+		public string? MultipleChoiceOptions { get; set; } // JSON array of options for multiple choice questions
 		public DateTime SentAt { get; set; }
 		public bool IsAnswered { get; set; }
 		public bool IsExpired { get; set; }
