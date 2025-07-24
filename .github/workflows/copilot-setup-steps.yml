@@ -1,0 +1,53 @@
+name: Copilot Setup Steps
+
+# This workflow pre-installs tools and dependencies for Copilot Coding Agent
+# Reference: https://docs.github.com/en/enterprise-cloud@latest/copilot/how-tos/agents/copilot-coding-agent/customizing-the-development-environment-for-copilot-coding-agent  # yamllint disable-line line-length
+
+on:
+  workflow_dispatch:  # Allows manual triggering if needed
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    name: Setup Development Environment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9.0 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install Entity Framework Core CLI Tools
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Install SkiaSharp system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libfontconfig1 \
+            fontconfig \
+            libfreetype6 \
+            libharfbuzz0b \
+            libpng16-16 \
+            libjpeg-turbo8 \
+            libwebp7
+
+      - name: Install PostgreSQL client tools
+        run: |
+          sudo apt-get install -y postgresql-client
+
+      - name: Verify installations
+        run: |
+          dotnet --version
+          dotnet tool list --global
+          fc-cache --version
+          psql --version
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+
+      - name: Build project to verify setup
+        run: dotnet build --no-restore
