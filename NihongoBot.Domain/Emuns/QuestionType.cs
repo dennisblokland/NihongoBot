@@ -5,5 +5,6 @@ namespace NihongoBot.Domain.Enums
         Hiragana,
         Katakana,
 	Kanji,
+        MultipleChoiceHiragana,
     }
 }

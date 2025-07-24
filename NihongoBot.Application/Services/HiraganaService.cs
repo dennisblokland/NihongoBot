@@ -11,6 +11,8 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
+using Newtonsoft.Json;
+
 namespace NihongoBot.Application.Services;
 
 public class HiraganaService
@@ -60,6 +62,45 @@ public class HiraganaService
 		await SendReadyMessageAsync(telegramId, question.Id, cancellationToken);
 	}
 
+	public async Task SendMultipleChoiceHiraganaMessage(long telegramId, Guid userId, CancellationToken cancellationToken)
+	{
+		_logger.LogInformation("Sending Multiple Choice Hiragana message at {Time}", DateTime.Now);
+
+		Kana? kana = await _kanaRepository.GetRandomAsync(KanaType.Hiragana, cancellationToken);
+
+		if (kana == null)
+		{
+			_logger.LogWarning("No Kana found in the database.");
+			return;
+		}
+
+		// Get wrong answers
+		var wrongAnswers = await _kanaRepository.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, 3, cancellationToken);
+		
+		// Create list of all options (correct + wrong)
+		var allOptions = new List<string> { kana.Romaji };
+		allOptions.AddRange(wrongAnswers.Select(w => w.Romaji));
+		
+		// Shuffle the options
+		var random = new Random();
+		allOptions = allOptions.OrderBy(x => random.Next()).ToList();
+
+		Question question = new()
+		{
+			UserId = userId,
+			QuestionType = QuestionType.MultipleChoiceHiragana,
+			QuestionText = kana.Character,
+			CorrectAnswer = kana.Romaji,
+			MultipleChoiceOptions = JsonConvert.SerializeObject(allOptions),
+			TimeLimit = 1,
+		};
+
+		question = await _questionRepository.AddAsync(question, cancellationToken);
+		await _questionRepository.SaveChangesAsync(cancellationToken);
+
+		await SendMultipleChoiceQuestion(telegramId, question, cancellationToken);
+	}
+
 	public async Task SendQuestion(long telegramId, Question question, CancellationToken cancellationToken)
 	{
 		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(question.QuestionText);
@@ -68,6 +109,42 @@ public class HiraganaService
 		Message message = await _botClient.SendPhoto(telegramId,
 			InputFile.FromStream(stream, "hiragana.png"),
 			caption: $"What is the Romaji for this {question.QuestionText} character?",
+			cancellationToken: cancellationToken);
+
+		question.MessageId = message.MessageId;
+		question.SentAt = DateTime.UtcNow;
+		question.IsAccepted = true;
+		_questionRepository.Update(question);
+
+		await _questionRepository.SaveChangesAsync(cancellationToken);
+	}
+
+	public async Task SendMultipleChoiceQuestion(long telegramId, Question question, CancellationToken cancellationToken)
+	{
+		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(question.QuestionText);
+		Stream stream = new MemoryStream(imageBytes);
+
+		// Parse the multiple choice options
+		var options = JsonConvert.DeserializeObject<List<string>>(question.MultipleChoiceOptions ?? "[]") ?? new List<string>();
+		
+		// Create inline keyboard with options
+		var keyboardButtons = new List<List<InlineKeyboardButton>>();
+		
+		foreach (var option in options)
+		{
+			string callbackData = $"{(int)CallBackType.MultipleChoiceAnswer}|{question.Id}|{option}";
+			keyboardButtons.Add(new List<InlineKeyboardButton>
+			{
+				InlineKeyboardButton.WithCallbackData(option, callbackData)
+			});
+		}
+
+		InlineKeyboardMarkup inlineKeyboard = new(keyboardButtons);
+
+		Message message = await _botClient.SendPhoto(telegramId,
+			InputFile.FromStream(stream, "hiragana.png"),
+			caption: $"What is the Romaji for this {question.QuestionText} character?",
+			replyMarkup: inlineKeyboard,
 			cancellationToken: cancellationToken);
 
 		question.MessageId = message.MessageId;
