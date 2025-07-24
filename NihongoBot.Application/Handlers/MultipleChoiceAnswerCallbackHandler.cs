@@ -43,7 +43,7 @@ public class MultipleChoiceAnswerCallbackHandler : ITelegramCallbackHandler<Mult
 			return;
 		}
 
-		Domain.User? user = await _userRepository.GetByIdAsync(question.UserId, cancellationToken);
+		Domain.User? user = await _userRepository.FindByIdAsync(question.UserId, cancellationToken);
 		if (user == null)
 		{
 			await _botClient.SendMessage(chatId, "User not found.", cancellationToken: cancellationToken);

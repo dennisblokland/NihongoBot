@@ -61,7 +61,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			.ReturnsAsync(question);
 
 		_userRepositoryMock
-			.Setup(repo => repo.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.FindByIdAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(user);
 
 		// Act
@@ -105,7 +105,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			.ReturnsAsync(question);
 
 		_userRepositoryMock
-			.Setup(repo => repo.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.FindByIdAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(user);
 
 		// Act
@@ -151,7 +151,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			.ReturnsAsync(question);
 
 		_userRepositoryMock
-			.Setup(repo => repo.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+			.Setup(repo => repo.FindByIdAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(user);
 
 		// Act
