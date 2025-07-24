@@ -54,7 +54,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			Attempts = 0
 		};
 
-		Domain.User user = new Domain.User();
+		Domain.User user = new Domain.User(123456789L, "testuser");
 
 		_questionRepositoryMock
 			.Setup(repo => repo.FindByIdAsync(questionId, It.IsAny<CancellationToken>()))
@@ -98,7 +98,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			Attempts = 0
 		};
 
-		Domain.User user = new Domain.User();
+		Domain.User user = new Domain.User(123456789L, "testuser");
 
 		_questionRepositoryMock
 			.Setup(repo => repo.FindByIdAsync(questionId, It.IsAny<CancellationToken>()))
@@ -144,7 +144,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			Attempts = 2  // Already at 2 attempts, this will be the 3rd
 		};
 
-		Domain.User user = new Domain.User();
+		Domain.User user = new Domain.User(123456789L, "testuser");
 
 		_questionRepositoryMock
 			.Setup(repo => repo.FindByIdAsync(questionId, It.IsAny<CancellationToken>()))
