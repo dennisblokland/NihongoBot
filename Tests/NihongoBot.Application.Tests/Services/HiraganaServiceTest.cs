@@ -149,10 +149,9 @@ public class HiraganaServiceTest
 				It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new Message());
 
-		Fixture fixture = new();
 		_questionRepositoryMock
 			.Setup(repo => repo.AddAsync(It.IsAny<Question>(), cancellationToken))
-			.ReturnsAsync(fixture.Create<Question>());
+			.ReturnsAsync((Question q, CancellationToken ct) => q);
 
 		// Act
 		await _hiraganaService.SendMultipleChoiceHiraganaMessage(telegramId, userId, cancellationToken);
@@ -165,6 +164,6 @@ public class HiraganaServiceTest
 			q.CorrectAnswer == kana.Romaji &&
 			!string.IsNullOrEmpty(q.MultipleChoiceOptions)), cancellationToken), Times.Once);
 
-		_questionRepositoryMock.Verify(repo => repo.SaveChangesAsync(cancellationToken), Times.Once);
+		_questionRepositoryMock.Verify(repo => repo.SaveChangesAsync(cancellationToken), Times.Exactly(2));
 	}
 }
