@@ -33,16 +33,16 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 	{
 		// Arrange
 		long chatId = 123456789L;
-		var questionId = Guid.NewGuid();
-		var userId = Guid.NewGuid();
+		Guid questionId = Guid.NewGuid();
+		Guid userId = Guid.NewGuid();
 		
-		var callbackData = new MultipleChoiceAnswerCallbackData
+		MultipleChoiceAnswerCallbackData callbackData = new MultipleChoiceAnswerCallbackData
 		{
 			QuestionId = questionId,
 			SelectedAnswer = "tsu"
 		};
 
-		var question = new Question
+		Question question = new Question
 		{
 			Id = questionId,
 			UserId = userId,
@@ -54,7 +54,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			Attempts = 0
 		};
 
-		var user = new Domain.User();
+		Domain.User user = new Domain.User();
 
 		_questionRepositoryMock
 			.Setup(repo => repo.FindByIdAsync(questionId, It.IsAny<CancellationToken>()))
@@ -77,16 +77,16 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 	{
 		// Arrange
 		long chatId = 123456789L;
-		var questionId = Guid.NewGuid();
-		var userId = Guid.NewGuid();
+		Guid questionId = Guid.NewGuid();
+		Guid userId = Guid.NewGuid();
 		
-		var callbackData = new MultipleChoiceAnswerCallbackData
+		MultipleChoiceAnswerCallbackData callbackData = new MultipleChoiceAnswerCallbackData
 		{
 			QuestionId = questionId,
 			SelectedAnswer = "ka"  // Wrong answer
 		};
 
-		var question = new Question
+		Question question = new Question
 		{
 			Id = questionId,
 			UserId = userId,
@@ -98,7 +98,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			Attempts = 0
 		};
 
-		var user = new Domain.User();
+		Domain.User user = new Domain.User();
 
 		_questionRepositoryMock
 			.Setup(repo => repo.FindByIdAsync(questionId, It.IsAny<CancellationToken>()))
@@ -123,16 +123,16 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 	{
 		// Arrange
 		long chatId = 123456789L;
-		var questionId = Guid.NewGuid();
-		var userId = Guid.NewGuid();
+		Guid questionId = Guid.NewGuid();
+		Guid userId = Guid.NewGuid();
 		
-		var callbackData = new MultipleChoiceAnswerCallbackData
+		MultipleChoiceAnswerCallbackData callbackData = new MultipleChoiceAnswerCallbackData
 		{
 			QuestionId = questionId,
 			SelectedAnswer = "ka"  // Wrong answer
 		};
 
-		var question = new Question
+		Question question = new Question
 		{
 			Id = questionId,
 			UserId = userId,
@@ -144,7 +144,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			Attempts = 2  // Already at 2 attempts, this will be the 3rd
 		};
 
-		var user = new Domain.User();
+		Domain.User user = new Domain.User();
 
 		_questionRepositoryMock
 			.Setup(repo => repo.FindByIdAsync(questionId, It.IsAny<CancellationToken>()))

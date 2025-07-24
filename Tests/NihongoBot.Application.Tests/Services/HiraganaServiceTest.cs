@@ -128,7 +128,7 @@ public class HiraganaServiceTest
 			Romaji = "tsu"
 		};
 
-		var wrongAnswers = new List<Kana>
+		List<Kana> wrongAnswers = new List<Kana>
 		{
 			new() { Character = "か", Romaji = "ka" },
 			new() { Character = "く", Romaji = "ku" },

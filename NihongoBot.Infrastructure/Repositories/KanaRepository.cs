@@ -27,7 +27,7 @@ public class KanaRepository(IServiceProvider serviceProvider) : AbstractDomainRe
 	public async Task<List<Kana>> GetWrongAnswersAsync(string correctAnswer, KanaType kanaType, int count, CancellationToken cancellationToken = default)
 	{
 		// Get all kana of the same type except the correct answer
-		var allKana = await DatabaseSet
+		List<Kana> allKana = await DatabaseSet
 			.Where(x => x.Type == kanaType && x.Romaji != correctAnswer)
 			.ToListAsync(cancellationToken);
 
@@ -35,31 +35,31 @@ public class KanaRepository(IServiceProvider serviceProvider) : AbstractDomainRe
 			return new List<Kana>();
 
 		// Find similar answers (same first character or similar sounds)
-		var similarKana = allKana
+		List<Kana> similarKana = allKana
 			.Where(k => k.Romaji.StartsWith(correctAnswer[0]) || 
 			           CalculateSimilarity(k.Romaji, correctAnswer) > 0.5)
 			.ToList();
 
 		// Find dissimilar answers
-		var dissimilarKana = allKana
+		List<Kana> dissimilarKana = allKana
 			.Where(k => !similarKana.Contains(k))
 			.ToList();
 
-		var result = new List<Kana>();
+		List<Kana> result = new List<Kana>();
 		
 		// Add one similar answer if available
 		if (similarKana.Count > 0)
 		{
-			var random = new Random();
+			Random random = new Random();
 			result.Add(similarKana[random.Next(similarKana.Count)]);
 		}
 
 		// Fill remaining slots with dissimilar answers
-		var remaining = count - result.Count;
+		int remaining = count - result.Count;
 		if (dissimilarKana.Count > 0 && remaining > 0)
 		{
-			var random = new Random();
-			var selectedDissimilar = dissimilarKana
+			Random random = new Random();
+			List<Kana> selectedDissimilar = dissimilarKana
 				.OrderBy(x => random.Next())
 				.Take(remaining)
 				.ToList();
@@ -69,8 +69,8 @@ public class KanaRepository(IServiceProvider serviceProvider) : AbstractDomainRe
 		// If we still need more options, add from any remaining kana
 		if (result.Count < count && allKana.Count > result.Count)
 		{
-			var random = new Random();
-			var remainingKana = allKana
+			Random random = new Random();
+			List<Kana> remainingKana = allKana
 				.Where(k => !result.Contains(k))
 				.OrderBy(x => random.Next())
 				.Take(count - result.Count)
@@ -87,8 +87,8 @@ public class KanaRepository(IServiceProvider serviceProvider) : AbstractDomainRe
 			return 0;
 
 		// Simple similarity based on common characters
-		var commonChars = s1.Intersect(s2).Count();
-		var maxLength = Math.Max(s1.Length, s2.Length);
+		int commonChars = s1.Intersect(s2).Count();
+		int maxLength = Math.Max(s1.Length, s2.Length);
 		return (double)commonChars / maxLength;
 	}
 }

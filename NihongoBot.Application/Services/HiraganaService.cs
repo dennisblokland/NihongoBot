@@ -75,14 +75,14 @@ public class HiraganaService
 		}
 
 		// Get wrong answers
-		var wrongAnswers = await _kanaRepository.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, 3, cancellationToken);
+		List<Kana> wrongAnswers = await _kanaRepository.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, 3, cancellationToken);
 		
 		// Create list of all options (correct + wrong)
-		var allOptions = new List<string> { kana.Romaji };
+		List<string> allOptions = new List<string> { kana.Romaji };
 		allOptions.AddRange(wrongAnswers.Select(w => w.Romaji));
 		
 		// Shuffle the options
-		var random = new Random();
+		Random random = new Random();
 		allOptions = allOptions.OrderBy(x => random.Next()).ToList();
 
 		Question question = new()
@@ -125,12 +125,12 @@ public class HiraganaService
 		Stream stream = new MemoryStream(imageBytes);
 
 		// Parse the multiple choice options
-		var options = JsonConvert.DeserializeObject<List<string>>(question.MultipleChoiceOptions ?? "[]") ?? new List<string>();
+		List<string> options = JsonConvert.DeserializeObject<List<string>>(question.MultipleChoiceOptions ?? "[]") ?? new List<string>();
 		
 		// Create inline keyboard with options
-		var keyboardButtons = new List<List<InlineKeyboardButton>>();
+		List<List<InlineKeyboardButton>> keyboardButtons = new List<List<InlineKeyboardButton>>();
 		
-		foreach (var option in options)
+		foreach (string option in options)
 		{
 			string callbackData = $"{(int)CallBackType.MultipleChoiceAnswer}|{question.Id}|{option}";
 			keyboardButtons.Add(new List<InlineKeyboardButton>
