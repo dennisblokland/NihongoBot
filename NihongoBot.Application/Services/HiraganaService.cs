@@ -78,8 +78,7 @@ public class HiraganaService
 		List<Kana> wrongAnswers = await _kanaRepository.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, 3, cancellationToken);
 		
 		// Create list of all options (correct + wrong)
-		List<string> allOptions = new List<string> { kana.Romaji };
-		allOptions.AddRange(wrongAnswers.Select(w => w.Romaji));
+		List<string> allOptions = [kana.Romaji, .. wrongAnswers.Select(w => w.Romaji)];
 		
 		// Shuffle the options
 		Random random = new Random();

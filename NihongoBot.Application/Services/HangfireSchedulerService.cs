@@ -156,11 +156,25 @@ public class HangfireSchedulerService
 				scheduledDateTime = scheduledDateTime.AddDays(1);
 			}
 
-			_recurringJobManager.AddOrUpdate<HiraganaService>(
-				jobId,
-				service => service.SendHiraganaMessage(user.TelegramId, user.Id, CancellationToken.None),
-				Cron.Yearly(scheduledDateTime.Month, scheduledDateTime.Day, scheduledDateTime.Hour, scheduledDateTime.Minute)
-			);
+			// Randomly choose between SendHiraganaMessage and SendMultipleChoiceHiraganaMessage
+			bool useMultipleChoice = Random.Shared.Next(2) == 0;
+
+			if (useMultipleChoice)
+			{
+				_recurringJobManager.AddOrUpdate<HiraganaService>(
+					jobId,
+					service => service.SendMultipleChoiceHiraganaMessage(user.TelegramId, user.Id, CancellationToken.None),
+					Cron.Yearly(scheduledDateTime.Month, scheduledDateTime.Day, scheduledDateTime.Hour, scheduledDateTime.Minute)
+				);
+			}
+			else
+			{
+				_recurringJobManager.AddOrUpdate<HiraganaService>(
+					jobId,
+					service => service.SendHiraganaMessage(user.TelegramId, user.Id, CancellationToken.None),
+					Cron.Yearly(scheduledDateTime.Month, scheduledDateTime.Day, scheduledDateTime.Hour, scheduledDateTime.Minute)
+				);
+			}
 		}
 
 	}
