@@ -112,16 +112,13 @@ public static class ServiceCollectionExtensions
 		// Image caching services
 		services.AddSingleton<IImageCacheService, ImageCacheService>();
 
-		// Stroke order services
-		services.AddScoped<IStrokeOrderService, StrokeOrderService>();
 
 		services.AddHttpClient<IJlptVocabApiService, JlptVocabApiService>(client =>
 		{
 			client.BaseAddress = new Uri("https://jlpt-vocab-api.vercel.app/api/words/");
 		});
 
-		// HttpClient for stroke order service with Wikipedia User-Agent policy compliance
-		services.AddHttpClient<StrokeOrderService>(client =>
+		services.AddHttpClient<IStrokeOrderService, StrokeOrderService>(client =>
 		{
 			// Set User-Agent header per Wikipedia's User-Agent policy
 			// https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy
