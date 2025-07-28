@@ -1,3 +1,4 @@
+using NihongoBot.Application.Interfaces;
 using NihongoBot.Application.Models;
 using NihongoBot.Application.Services;
 using NihongoBot.Domain.Aggregates.Kana;
@@ -15,17 +16,20 @@ public class MultipleChoiceAnswerCallbackHandler : ITelegramCallbackHandler<Mult
 	private readonly IQuestionRepository _questionRepository;
 	private readonly IUserRepository _userRepository;
 	private readonly IKanaRepository _kanaRepository;
+	private readonly HiraganaService _hiraganaService;
 
 	public MultipleChoiceAnswerCallbackHandler(
 		ITelegramBotClient botClient,
 		IQuestionRepository questionRepository,
 		IUserRepository userRepository,
-		IKanaRepository kanaRepository)
+		IKanaRepository kanaRepository,
+		HiraganaService hiraganaService)
 	{
 		_botClient = botClient;
 		_questionRepository = questionRepository;
 		_userRepository = userRepository;
 		_kanaRepository = kanaRepository;
+		_hiraganaService = hiraganaService;
 	}
 
 	public async Task HandleAsync(long chatId, MultipleChoiceAnswerCallbackData callbackData, CancellationToken cancellationToken)
@@ -77,6 +81,9 @@ public class MultipleChoiceAnswerCallbackHandler : ITelegramCallbackHandler<Mult
 			await _botClient.SendMessage(chatId,
 				message,
 				ParseMode.Markdown, cancellationToken: cancellationToken, replyParameters: question.MessageId);
+
+			// Automatically show stroke order animation for correct answers
+			await _hiraganaService.SendStrokeOrderAnimation(chatId, question.QuestionText, cancellationToken);
 		}
 		else
 		{

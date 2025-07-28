@@ -32,7 +32,7 @@ public class StrokeOrderServiceTests
 		// Assert
 		Assert.NotNull(url);
 		Assert.Contains("Hiragana_%E3%81%82_stroke_order_animation.gif", url);
-		Assert.StartsWith("https://upload.wikimedia.org/wikipedia/commons/", url);
+		Assert.StartsWith("https://en.wikipedia.org/wiki/Special:FilePath/", url);
 	}
 
 	[Fact]
