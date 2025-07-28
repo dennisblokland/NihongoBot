@@ -112,10 +112,16 @@ public static class ServiceCollectionExtensions
 		// Image caching services
 		services.AddSingleton<IImageCacheService, ImageCacheService>();
 
+		// Stroke order services
+		services.AddScoped<IStrokeOrderService, StrokeOrderService>();
+
 		services.AddHttpClient<IJlptVocabApiService, JlptVocabApiService>(client =>
 		{
 			client.BaseAddress = new Uri("https://jlpt-vocab-api.vercel.app/api/words/");
 		});
+
+		// HttpClient for stroke order service
+		services.AddHttpClient<StrokeOrderService>();
 
 	}
 }

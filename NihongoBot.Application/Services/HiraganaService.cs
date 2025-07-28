@@ -21,6 +21,7 @@ public class HiraganaService
 	private readonly IQuestionRepository _questionRepository;
 	private readonly IKanaRepository _kanaRepository;
 	private readonly IImageCacheService _imageCacheService;
+	private readonly IStrokeOrderService _strokeOrderService;
 	private readonly ILogger<HiraganaService> _logger;
 
 	public HiraganaService(
@@ -28,6 +29,7 @@ public class HiraganaService
 		IKanaRepository kanaRepository,
 		ITelegramBotClient botClient,
 		IImageCacheService imageCacheService,
+		IStrokeOrderService strokeOrderService,
 		ILogger<HiraganaService> logger
 	)
 	{
@@ -36,6 +38,7 @@ public class HiraganaService
 		_questionRepository = questionRepository;
 		_kanaRepository = kanaRepository;
 		_imageCacheService = imageCacheService;
+		_strokeOrderService = strokeOrderService;
 	}
 
 	public async Task SendHiraganaMessage(long telegramId, Guid userId, CancellationToken cancellationToken)
@@ -108,9 +111,21 @@ public class HiraganaService
 		byte[] imageBytes = await _imageCacheService.GetOrGenerateImageAsync(question.QuestionText);
 		Stream stream = new MemoryStream(imageBytes);
 
+		InlineKeyboardMarkup? replyMarkup = null;
+		
+		// Add stroke order button if available
+		if (_strokeOrderService.HasStrokeOrderAnimation(question.QuestionText))
+		{
+			string callbackData = $"{(int)CallBackType.ShowStrokeOrder}|{question.Id}|{question.QuestionText}";
+			replyMarkup = new InlineKeyboardMarkup(
+				InlineKeyboardButton.WithCallbackData("🎬 Show Stroke Order", callbackData)
+			);
+		}
+
 		Message message = await _botClient.SendPhoto(telegramId,
 			InputFile.FromStream(stream, "hiragana.png"),
 			caption: $"What is the Romaji for this {question.QuestionText} character?",
+			replyMarkup: replyMarkup,
 			cancellationToken: cancellationToken);
 
 		question.MessageId = message.MessageId;
@@ -141,6 +156,16 @@ public class HiraganaService
 			});
 		}
 
+		// Add stroke order button if available
+		if (_strokeOrderService.HasStrokeOrderAnimation(question.QuestionText))
+		{
+			string strokeOrderCallbackData = $"{(int)CallBackType.ShowStrokeOrder}|{question.Id}|{question.QuestionText}";
+			keyboardButtons.Add(new List<InlineKeyboardButton>
+			{
+				InlineKeyboardButton.WithCallbackData("🎬 Show Stroke Order", strokeOrderCallbackData)
+			});
+		}
+
 		InlineKeyboardMarkup inlineKeyboard = new(keyboardButtons);
 
 		Message message = await _botClient.SendPhoto(telegramId,
@@ -155,6 +180,44 @@ public class HiraganaService
 		_questionRepository.Update(question);
 
 		await _questionRepository.SaveChangesAsync(cancellationToken);
+	}
+
+	public async Task SendStrokeOrderAnimation(long telegramId, string character, CancellationToken cancellationToken)
+	{
+		if (!_strokeOrderService.HasStrokeOrderAnimation(character))
+		{
+			await _botClient.SendMessage(telegramId, 
+				$"Sorry, stroke order animation is not available for the character {character}.",
+				cancellationToken: cancellationToken);
+			return;
+		}
+
+		try
+		{
+			byte[]? animationBytes = await _strokeOrderService.GetStrokeOrderAnimationBytesAsync(character, cancellationToken);
+			
+			if (animationBytes == null)
+			{
+				await _botClient.SendMessage(telegramId, 
+					$"Sorry, stroke order animation could not be loaded for the character {character}.",
+					cancellationToken: cancellationToken);
+				return;
+			}
+
+			Stream animationStream = new MemoryStream(animationBytes);
+			
+			await _botClient.SendAnimation(telegramId,
+				InputFile.FromStream(animationStream, $"stroke_order_{character}.gif"),
+				caption: $"Stroke order for {character}",
+				cancellationToken: cancellationToken);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Failed to send stroke order animation for character: {Character}", character);
+			await _botClient.SendMessage(telegramId, 
+				$"Sorry, there was an error loading the stroke order animation for {character}.",
+				cancellationToken: cancellationToken);
+		}
 	}
 
 	private async Task SendReadyMessageAsync(long telegramId, Guid QuestionId, CancellationToken cancellationToken)

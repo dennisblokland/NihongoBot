@@ -22,6 +22,7 @@ public class HiraganaServiceTest
 	private readonly Mock<IQuestionRepository> _questionRepositoryMock = new();
 	private readonly Mock<IKanaRepository> _kanaRepositoryMock = new();
 	private readonly Mock<IImageCacheService> _imageCacheServiceMock = new();
+	private readonly Mock<IStrokeOrderService> _strokeOrderServiceMock = new();
 	private readonly Mock<ILogger<HiraganaService>> _loggerMock = new();
 	private readonly HiraganaService _hiraganaService;
 
@@ -32,11 +33,17 @@ public class HiraganaServiceTest
 			.Setup(service => service.GetOrGenerateImageAsync(It.IsAny<string>()))
 			.ReturnsAsync(new byte[] { 1, 2, 3, 4 }); // dummy image bytes
 
+		// Setup stroke order service defaults
+		_strokeOrderServiceMock
+			.Setup(service => service.HasStrokeOrderAnimation(It.IsAny<string>()))
+			.Returns(false); // Default to no stroke order available
+
 		_hiraganaService = new HiraganaService(
 			_questionRepositoryMock.Object,
 			_kanaRepositoryMock.Object,
 			_botClientMock.Object,
 			_imageCacheServiceMock.Object,
+			_strokeOrderServiceMock.Object,
 			_loggerMock.Object
 		);
 	}
