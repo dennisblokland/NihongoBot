@@ -111,21 +111,9 @@ public class HiraganaService
 		byte[] imageBytes = await _imageCacheService.GetOrGenerateImageAsync(question.QuestionText);
 		Stream stream = new MemoryStream(imageBytes);
 
-		InlineKeyboardMarkup? replyMarkup = null;
-		
-		// Add stroke order button if available
-		if (_strokeOrderService.HasStrokeOrderAnimation(question.QuestionText))
-		{
-			string callbackData = $"{(int)CallBackType.ShowStrokeOrder}|{question.Id}|{question.QuestionText}";
-			replyMarkup = new InlineKeyboardMarkup(
-				InlineKeyboardButton.WithCallbackData("🎬 Show Stroke Order", callbackData)
-			);
-		}
-
 		Message message = await _botClient.SendPhoto(telegramId,
 			InputFile.FromStream(stream, "hiragana.png"),
 			caption: $"What is the Romaji for this {question.QuestionText} character?",
-			replyMarkup: replyMarkup,
 			cancellationToken: cancellationToken);
 
 		question.MessageId = message.MessageId;
@@ -153,16 +141,6 @@ public class HiraganaService
 			keyboardButtons.Add(new List<InlineKeyboardButton>
 			{
 				InlineKeyboardButton.WithCallbackData(option, callbackData)
-			});
-		}
-
-		// Add stroke order button if available
-		if (_strokeOrderService.HasStrokeOrderAnimation(question.QuestionText))
-		{
-			string strokeOrderCallbackData = $"{(int)CallBackType.ShowStrokeOrder}|{question.Id}|{question.QuestionText}";
-			keyboardButtons.Add(new List<InlineKeyboardButton>
-			{
-				InlineKeyboardButton.WithCallbackData("🎬 Show Stroke Order", strokeOrderCallbackData)
 			});
 		}
 
