@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Enums;
-using NihongoBot.Application.Helpers;
+using NihongoBot.Application.Interfaces;
 using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Enums;
@@ -20,12 +20,16 @@ public class HiraganaService
 	private readonly ITelegramBotClient _botClient;
 	private readonly IQuestionRepository _questionRepository;
 	private readonly IKanaRepository _kanaRepository;
+	private readonly IImageCacheService _imageCacheService;
+	private readonly IStrokeOrderService _strokeOrderService;
 	private readonly ILogger<HiraganaService> _logger;
 
 	public HiraganaService(
 		IQuestionRepository questionRepository,
 		IKanaRepository kanaRepository,
 		ITelegramBotClient botClient,
+		IImageCacheService imageCacheService,
+		IStrokeOrderService strokeOrderService,
 		ILogger<HiraganaService> logger
 	)
 	{
@@ -33,6 +37,8 @@ public class HiraganaService
 		_logger = logger;
 		_questionRepository = questionRepository;
 		_kanaRepository = kanaRepository;
+		_imageCacheService = imageCacheService;
+		_strokeOrderService = strokeOrderService;
 	}
 
 	public async Task SendHiraganaMessage(long telegramId, Guid userId, CancellationToken cancellationToken)
@@ -102,7 +108,7 @@ public class HiraganaService
 
 	public async Task SendQuestion(long telegramId, Question question, CancellationToken cancellationToken)
 	{
-		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(question.QuestionText);
+		byte[] imageBytes = await _imageCacheService.GetOrGenerateImageAsync(question.QuestionText);
 		Stream stream = new MemoryStream(imageBytes);
 
 		Message message = await _botClient.SendPhoto(telegramId,
@@ -120,7 +126,7 @@ public class HiraganaService
 
 	public async Task SendMultipleChoiceQuestion(long telegramId, Question question, CancellationToken cancellationToken)
 	{
-		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(question.QuestionText);
+		byte[] imageBytes = await _imageCacheService.GetOrGenerateImageAsync(question.QuestionText);
 		Stream stream = new MemoryStream(imageBytes);
 
 		// Parse the multiple choice options
@@ -152,6 +158,44 @@ public class HiraganaService
 		_questionRepository.Update(question);
 
 		await _questionRepository.SaveChangesAsync(cancellationToken);
+	}
+
+	public async Task SendStrokeOrderAnimation(long telegramId, string character, CancellationToken cancellationToken)
+	{
+		if (!_strokeOrderService.HasStrokeOrderAnimation(character))
+		{
+			await _botClient.SendMessage(telegramId, 
+				$"Sorry, stroke order animation is not available for the character {character}.",
+				cancellationToken: cancellationToken);
+			return;
+		}
+
+		try
+		{
+			byte[]? animationBytes = await _strokeOrderService.GetStrokeOrderAnimationBytesAsync(character, cancellationToken);
+			
+			if (animationBytes == null)
+			{
+				await _botClient.SendMessage(telegramId, 
+					$"Sorry, stroke order animation could not be loaded for the character {character}.",
+					cancellationToken: cancellationToken);
+				return;
+			}
+
+			Stream animationStream = new MemoryStream(animationBytes);
+			
+			await _botClient.SendAnimation(telegramId,
+				InputFile.FromStream(animationStream, $"stroke_order_{character}.gif"),
+				caption: $"Stroke order for {character}",
+				cancellationToken: cancellationToken);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Failed to send stroke order animation for character: {Character}", character);
+			await _botClient.SendMessage(telegramId, 
+				$"Sorry, there was an error loading the stroke order animation for {character}.",
+				cancellationToken: cancellationToken);
+		}
 	}
 
 	private async Task SendReadyMessageAsync(long telegramId, Guid QuestionId, CancellationToken cancellationToken)

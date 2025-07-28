@@ -176,6 +176,9 @@ public class BotService
 			await _botClient.SendMessage(chatId,
 				message,
 				ParseMode.Markdown, cancellationToken: cancellationToken, replyParameters: question.MessageId);
+
+			// Automatically show stroke order animation for correct answers
+			await _hiraganaService.SendStrokeOrderAnimation(chatId, question.QuestionText, cancellationToken);
 		}
 		else
 		{

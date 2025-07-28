@@ -1,7 +1,10 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 
 using NihongoBot.Application.Handlers;
+using NihongoBot.Application.Interfaces;
 using NihongoBot.Application.Models;
+using NihongoBot.Application.Services;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Enums;
 using NihongoBot.Domain.Interfaces.Repositories;
@@ -16,15 +19,31 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 	private readonly Mock<IQuestionRepository> _questionRepositoryMock = new();
 	private readonly Mock<IUserRepository> _userRepositoryMock = new();
 	private readonly Mock<IKanaRepository> _kanaRepositoryMock = new();
+	private readonly HiraganaService _hiraganaService;
 	private readonly MultipleChoiceAnswerCallbackHandler _handler;
 
 	public MultipleChoiceAnswerCallbackHandlerTest()
 	{
+		// Create mocks for HiraganaService dependencies
+		var imageCacheServiceMock = new Mock<IImageCacheService>();
+		var strokeOrderServiceMock = new Mock<IStrokeOrderService>();
+		var loggerMock = new Mock<ILogger<HiraganaService>>();
+
+		_hiraganaService = new HiraganaService(
+			_questionRepositoryMock.Object,
+			_kanaRepositoryMock.Object,
+			_botClientMock.Object,
+			imageCacheServiceMock.Object,
+			strokeOrderServiceMock.Object,
+			loggerMock.Object
+		);
+
 		_handler = new MultipleChoiceAnswerCallbackHandler(
 			_botClientMock.Object,
 			_questionRepositoryMock.Object,
 			_userRepositoryMock.Object,
-			_kanaRepositoryMock.Object
+			_kanaRepositoryMock.Object,
+			_hiraganaService
 		);
 	}
 
@@ -64,12 +83,18 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 			.Setup(repo => repo.FindByIdAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(user);
 
+		_kanaRepositoryMock
+			.Setup(repo => repo.GetByCharacterAsync("つ", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new NihongoBot.Domain.Aggregates.Kana.Kana { Character = "つ", Romaji = "tsu" });
+
 		// Act
 		await _handler.HandleAsync(chatId, callbackData, CancellationToken.None);
 
 		// Assert
 		Assert.True(question.IsAnswered);
 		_userRepositoryMock.Verify(repo => repo.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		// Note: We can't easily verify HiraganaService method calls since it's a concrete class,
+		// but the stroke order animation call will be made when the test runs
 	}
 
 	[Fact]
