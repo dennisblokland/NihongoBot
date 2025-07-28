@@ -217,4 +217,6 @@ public class StrokeOrderServiceTests
 		// Assert
 		Assert.Contains(character, supportedCharacters);
 	}
+
+
 }

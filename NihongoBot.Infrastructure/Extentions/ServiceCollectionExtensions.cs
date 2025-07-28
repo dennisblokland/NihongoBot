@@ -120,8 +120,13 @@ public static class ServiceCollectionExtensions
 			client.BaseAddress = new Uri("https://jlpt-vocab-api.vercel.app/api/words/");
 		});
 
-		// HttpClient for stroke order service
-		services.AddHttpClient<StrokeOrderService>();
+		// HttpClient for stroke order service with Wikipedia User-Agent policy compliance
+		services.AddHttpClient<StrokeOrderService>(client =>
+		{
+			// Set User-Agent header per Wikipedia's User-Agent policy
+			// https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy
+			client.DefaultRequestHeaders.UserAgent.ParseAdd("NihongoBot/1.0 (https://github.com/dennisblokland/NihongoBot; Telegram bot for learning Japanese)");
+		});
 
 	}
 }
