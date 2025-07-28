@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 using NihongoBot.Application.Enums;
-using NihongoBot.Application.Helpers;
+using NihongoBot.Application.Interfaces;
 using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Entities;
 using NihongoBot.Domain.Enums;
@@ -20,12 +20,14 @@ public class HiraganaService
 	private readonly ITelegramBotClient _botClient;
 	private readonly IQuestionRepository _questionRepository;
 	private readonly IKanaRepository _kanaRepository;
+	private readonly IImageCacheService _imageCacheService;
 	private readonly ILogger<HiraganaService> _logger;
 
 	public HiraganaService(
 		IQuestionRepository questionRepository,
 		IKanaRepository kanaRepository,
 		ITelegramBotClient botClient,
+		IImageCacheService imageCacheService,
 		ILogger<HiraganaService> logger
 	)
 	{
@@ -33,6 +35,7 @@ public class HiraganaService
 		_logger = logger;
 		_questionRepository = questionRepository;
 		_kanaRepository = kanaRepository;
+		_imageCacheService = imageCacheService;
 	}
 
 	public async Task SendHiraganaMessage(long telegramId, Guid userId, CancellationToken cancellationToken)
@@ -102,7 +105,7 @@ public class HiraganaService
 
 	public async Task SendQuestion(long telegramId, Question question, CancellationToken cancellationToken)
 	{
-		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(question.QuestionText);
+		byte[] imageBytes = await _imageCacheService.GetOrGenerateImageAsync(question.QuestionText);
 		Stream stream = new MemoryStream(imageBytes);
 
 		Message message = await _botClient.SendPhoto(telegramId,
@@ -120,7 +123,7 @@ public class HiraganaService
 
 	public async Task SendMultipleChoiceQuestion(long telegramId, Question question, CancellationToken cancellationToken)
 	{
-		byte[] imageBytes = KanaRenderer.RenderCharacterToImage(question.QuestionText);
+		byte[] imageBytes = await _imageCacheService.GetOrGenerateImageAsync(question.QuestionText);
 		Stream stream = new MemoryStream(imageBytes);
 
 		// Parse the multiple choice options

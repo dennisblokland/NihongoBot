@@ -1,4 +1,5 @@
 ﻿using NihongoBot.Application.Services;
+using NihongoBot.Application.Workers;
 using NihongoBot.Infrastructure.Extentions;
 
 class Program
@@ -26,5 +27,6 @@ class Program
             services.AddSingleton<BotService>();
             services.AddSingleton<HiraganaService>();
             services.AddHostedService<TelegramBotWorker>();
+            services.AddHostedService<ImageCacheWarmupService>();
         });
 }
