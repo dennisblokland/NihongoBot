@@ -1,18 +1,44 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using NihongoBot.Application.Services;
+using NihongoBot.Shared.Options;
 using Xunit;
 
 namespace NihongoBot.Application.Tests.Services;
 
-public class ImageCacheServiceTests
+public class ImageCacheServiceTests : IDisposable
 {
 	private readonly Mock<ILogger<ImageCacheService>> _loggerMock = new();
 	private readonly ImageCacheService _imageCacheService;
+	private readonly string _testCacheDirectory;
 
 	public ImageCacheServiceTests()
 	{
-		_imageCacheService = new ImageCacheService(_loggerMock.Object);
+		// Create a unique test cache directory
+		_testCacheDirectory = Path.Combine(Path.GetTempPath(), $"test_cache_{Guid.NewGuid():N}");
+		
+		var options = new ImageCacheOptions
+		{
+			CacheDirectory = _testCacheDirectory,
+			CacheExpirationHours = 1,
+			EnableCleanup = true,
+			CleanupIntervalHours = 1
+		};
+		
+		var optionsMock = new Mock<IOptions<ImageCacheOptions>>();
+		optionsMock.Setup(x => x.Value).Returns(options);
+		
+		_imageCacheService = new ImageCacheService(_loggerMock.Object, optionsMock.Object);
+	}
+
+	public void Dispose()
+	{
+		// Clean up test cache directory
+		if (Directory.Exists(_testCacheDirectory))
+		{
+			Directory.Delete(_testCacheDirectory, true);
+		}
 	}
 
 	[Fact]

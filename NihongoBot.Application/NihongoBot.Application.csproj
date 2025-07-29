@@ -15,6 +15,7 @@
 <ItemGroup>
     <ProjectReference Include="..\NihongoBot.Domain\NihongoBot.Domain.csproj" />
     <ProjectReference Include="..\NihongoBot.Persistence\NihongoBot.Persistence.csproj" />
+    <ProjectReference Include="..\NihongoBot.Shared\NihongoBot.Shared.csproj" />
 </ItemGroup>
 <ItemGroup>
   <None Update="fonts\NotoSansJP-Regular.ttf">

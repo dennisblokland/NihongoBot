@@ -1,26 +1,34 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NihongoBot.Application.Helpers;
 using NihongoBot.Application.Interfaces;
-using System.Collections.Concurrent;
+using NihongoBot.Shared.Options;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace NihongoBot.Application.Services;
 
 /// <summary>
-/// In-memory cache service for character images with thread-safe operations
+/// Disk-based cache service for character images with thread-safe operations
 /// </summary>
 public class ImageCacheService : IImageCacheService
 {
 	private readonly ILogger<ImageCacheService> _logger;
-	private readonly ConcurrentDictionary<string, byte[]> _imageCache;
+	private readonly ImageCacheOptions _options;
+	private readonly SemaphoreSlim _semaphore;
 	private int _hitCount;
 	private int _missCount;
 
-	public ImageCacheService(ILogger<ImageCacheService> logger)
+	public ImageCacheService(ILogger<ImageCacheService> logger, IOptions<ImageCacheOptions> options)
 	{
 		_logger = logger;
-		_imageCache = new ConcurrentDictionary<string, byte[]>();
+		_options = options.Value;
+		_semaphore = new SemaphoreSlim(1, 1);
 		_hitCount = 0;
 		_missCount = 0;
+
+		// Ensure cache directory exists
+		Directory.CreateDirectory(_options.CacheDirectory);
 	}
 
 	public async Task<byte[]> GetOrGenerateImageAsync(string character)
@@ -30,23 +38,34 @@ public class ImageCacheService : IImageCacheService
 			throw new ArgumentException("Character cannot be null or empty", nameof(character));
 		}
 
+		string fileName = GetCacheFileName(character);
+		string filePath = Path.Combine(_options.CacheDirectory, fileName);
+
 		// Try to get from cache first
-		if (_imageCache.TryGetValue(character, out byte[]? cachedImage))
+		if (File.Exists(filePath) && !IsFileExpired(filePath))
 		{
 			Interlocked.Increment(ref _hitCount);
 			_logger.LogDebug("Cache hit for character: {Character}", character);
-			return cachedImage;
+			return await File.ReadAllBytesAsync(filePath);
 		}
 
-		// Generate image if not in cache
+		// Generate image if not in cache or expired
 		Interlocked.Increment(ref _missCount);
 		_logger.LogDebug("Cache miss for character: {Character}, generating image", character);
 
 		byte[] imageBytes = await Task.Run(() => KanaRenderer.RenderCharacterToImage(character));
 		
-		// Cache the generated image
-		_imageCache.TryAdd(character, imageBytes);
-		_logger.LogDebug("Cached image for character: {Character}, cache size: {CacheSize}", character, _imageCache.Count);
+		// Cache the generated image to disk
+		await _semaphore.WaitAsync();
+		try
+		{
+			await File.WriteAllBytesAsync(filePath, imageBytes);
+			_logger.LogDebug("Cached image for character: {Character} to file: {FilePath}", character, fileName);
+		}
+		finally
+		{
+			_semaphore.Release();
+		}
 
 		return imageBytes;
 	}
@@ -75,11 +94,14 @@ public class ImageCacheService : IImageCacheService
 
 				try
 				{
-					// Only generate if not already cached
-					if (!_imageCache.ContainsKey(character))
+					string fileName = GetCacheFileName(character);
+					string filePath = Path.Combine(_options.CacheDirectory, fileName);
+
+					// Only generate if not already cached or expired
+					if (!File.Exists(filePath) || IsFileExpired(filePath))
 					{
 						byte[] imageBytes = KanaRenderer.RenderCharacterToImage(character);
-						_imageCache.TryAdd(character, imageBytes);
+						File.WriteAllBytes(filePath, imageBytes);
 						_logger.LogDebug("Pre-generated image for character: {Character}", character);
 					}
 				}
@@ -90,13 +112,28 @@ public class ImageCacheService : IImageCacheService
 			});
 		}, cancellationToken);
 
-		_logger.LogInformation("Cache warming completed. Total cached images: {Count}", _imageCache.Count);
+		_logger.LogInformation("Cache warming completed. Total cached images: {Count}", GetCachedFileCount());
 	}
 
 	public void ClearCache()
 	{
-		int previousCount = _imageCache.Count;
-		_imageCache.Clear();
+		int previousCount = GetCachedFileCount();
+		
+		if (Directory.Exists(_options.CacheDirectory))
+		{
+			foreach (string file in Directory.GetFiles(_options.CacheDirectory, "*.png"))
+			{
+				try
+				{
+					File.Delete(file);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogWarning(ex, "Failed to delete cache file: {FilePath}", file);
+				}
+			}
+		}
+
 		Interlocked.Exchange(ref _hitCount, 0);
 		Interlocked.Exchange(ref _missCount, 0);
 		_logger.LogInformation("Cache cleared. Removed {Count} cached images", previousCount);
@@ -107,7 +144,99 @@ public class ImageCacheService : IImageCacheService
 		return (
 			HitCount: _hitCount,
 			MissCount: _missCount,
-			TotalEntries: _imageCache.Count
+			TotalEntries: GetCachedFileCount()
 		);
+	}
+
+	/// <summary>
+	/// Gets a safe filename for the character by hashing it
+	/// </summary>
+	/// <param name="character">The character to get filename for</param>
+	/// <returns>Safe filename with .png extension</returns>
+	private static string GetCacheFileName(string character)
+	{
+		using (SHA256 sha256 = SHA256.Create())
+		{
+			byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(character));
+			string hashString = Convert.ToHexString(hash)[..16]; // Use first 16 characters
+			return $"{hashString}.png";
+		}
+	}
+
+	/// <summary>
+	/// Checks if a cache file is expired based on the configured expiration time
+	/// </summary>
+	/// <param name="filePath">Path to the cache file</param>
+	/// <returns>True if the file is expired, false otherwise</returns>
+	private bool IsFileExpired(string filePath)
+	{
+		try
+		{
+			DateTime lastWriteTime = File.GetLastWriteTime(filePath);
+			TimeSpan age = DateTime.UtcNow - lastWriteTime.ToUniversalTime();
+			return age.TotalHours > _options.CacheExpirationHours;
+		}
+		catch
+		{
+			// If we can't determine the age, consider it expired
+			return true;
+		}
+	}
+
+	/// <summary>
+	/// Gets the count of cached PNG files in the cache directory
+	/// </summary>
+	/// <returns>Number of cached files</returns>
+	private int GetCachedFileCount()
+	{
+		try
+		{
+			if (!Directory.Exists(_options.CacheDirectory))
+				return 0;
+
+			return Directory.GetFiles(_options.CacheDirectory, "*.png").Length;
+		}
+		catch
+		{
+			return 0;
+		}
+	}
+
+	/// <summary>
+	/// Cleans up expired cache files
+	/// </summary>
+	public void CleanupExpiredFiles()
+	{
+		if (!_options.EnableCleanup || !Directory.Exists(_options.CacheDirectory))
+			return;
+
+		int removedCount = 0;
+		try
+		{
+			foreach (string file in Directory.GetFiles(_options.CacheDirectory, "*.png"))
+			{
+				if (IsFileExpired(file))
+				{
+					try
+					{
+						File.Delete(file);
+						removedCount++;
+					}
+					catch (Exception ex)
+					{
+						_logger.LogWarning(ex, "Failed to delete expired cache file: {FilePath}", file);
+					}
+				}
+			}
+
+			if (removedCount > 0)
+			{
+				_logger.LogInformation("Cleaned up {Count} expired cache files", removedCount);
+			}
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error during cache cleanup");
+		}
 	}
 }
