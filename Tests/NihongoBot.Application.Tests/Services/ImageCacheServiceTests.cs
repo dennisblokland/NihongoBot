@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using NihongoBot.Application.Interfaces;
 using NihongoBot.Application.Services;
 using NihongoBot.Shared.Options;
 using Xunit;
@@ -188,5 +189,180 @@ public class ImageCacheServiceTests : IDisposable
 		// Note: In concurrent scenarios, the exact hit count can vary depending on timing,
 		// but we should have at least some hits and total requests should equal numberOfTasks
 		Assert.True(stats.HitCount + stats.MissCount >= numberOfTasks);
+	}
+
+	[Fact]
+	public async Task GetOrGenerateImageAsync_ShouldUseCachedFile_WhenFileExists()
+	{
+		// Arrange
+		string character = "た";
+		
+		// First call to generate and cache the image
+		byte[] firstImageBytes = await _imageCacheService.GetOrGenerateImageAsync(character);
+		
+		// Verify file was created
+		string[] cacheFiles = Directory.GetFiles(_testCacheDirectory, "*.png");
+		Assert.Single(cacheFiles);
+
+		// Act - Second call should return cached image from disk
+		byte[] secondImageBytes = await _imageCacheService.GetOrGenerateImageAsync(character);
+
+		// Assert
+		Assert.Equal(firstImageBytes, secondImageBytes);
+		
+		var stats = _imageCacheService.GetCacheStats();
+		Assert.Equal(1, stats.HitCount);
+		Assert.Equal(1, stats.MissCount);
+		Assert.Equal(1, stats.TotalEntries);
+	}
+
+	[Fact]
+	public void CleanupExpiredFiles_ShouldRemoveExpiredFiles()
+	{
+		// Arrange
+		string character = "つ";
+		string fileName = GetCacheFileNameForCharacter(character);
+		string filePath = Path.Combine(_testCacheDirectory, fileName);
+		
+		// Create a test file with old timestamp
+		byte[] testBytes = [1, 2, 3, 4];
+		File.WriteAllBytes(filePath, testBytes);
+		
+		// Set file timestamp to be older than expiration (2 hours ago)
+		DateTime oldTime = DateTime.UtcNow.AddHours(-2);
+		File.SetLastWriteTimeUtc(filePath, oldTime);
+
+		// Act
+		_imageCacheService.CleanupExpiredFiles();
+
+		// Assert
+		Assert.False(File.Exists(filePath));
+	}
+
+	[Fact]
+	public void CleanupExpiredFiles_ShouldKeepNonExpiredFiles()
+	{
+		// Arrange
+		string character = "て";
+		string fileName = GetCacheFileNameForCharacter(character);
+		string filePath = Path.Combine(_testCacheDirectory, fileName);
+		
+		// Create a test file with recent timestamp
+		byte[] testBytes = [1, 2, 3, 4];
+		File.WriteAllBytes(filePath, testBytes);
+
+		// Act
+		_imageCacheService.CleanupExpiredFiles();
+
+		// Assert
+		Assert.True(File.Exists(filePath));
+	}
+
+	[Fact]
+	public async Task GetOrGenerateImageAsync_ShouldRegenerateExpiredImage()
+	{
+		// Arrange
+		string character = "と";
+		string fileName = GetCacheFileNameForCharacter(character);
+		string filePath = Path.Combine(_testCacheDirectory, fileName);
+		
+		// Create an expired cached file
+		byte[] oldBytes = [1, 2, 3, 4]; // Different from what KanaRenderer would generate
+		File.WriteAllBytes(filePath, oldBytes);
+		DateTime oldTime = DateTime.UtcNow.AddHours(-2);
+		File.SetLastWriteTimeUtc(filePath, oldTime);
+
+		// Act
+		byte[] newImageBytes = await _imageCacheService.GetOrGenerateImageAsync(character);
+
+		// Assert
+		Assert.NotEqual(oldBytes, newImageBytes);
+		Assert.True(newImageBytes.Length > oldBytes.Length); // Real PNG should be larger
+		
+		var stats = _imageCacheService.GetCacheStats();
+		Assert.Equal(0, stats.HitCount);
+		Assert.Equal(1, stats.MissCount);
+	}
+
+	[Fact]
+	public void GetCacheStats_ShouldReturnCorrectFileCount()
+	{
+		// Arrange - Create some test cache files
+		for (int i = 0; i < 3; i++)
+		{
+			string fileName = $"test_{i}.png";
+			string filePath = Path.Combine(_testCacheDirectory, fileName);
+			File.WriteAllBytes(filePath, [1, 2, 3]);
+		}
+
+		// Act
+		var stats = _imageCacheService.GetCacheStats();
+
+		// Assert
+		Assert.Equal(3, stats.TotalEntries);
+	}
+
+	[Fact]
+	public void ClearCache_ShouldDeleteAllCacheFiles()
+	{
+		// Arrange - Create some test cache files
+		for (int i = 0; i < 3; i++)
+		{
+			string fileName = $"test_{i}.png";
+			string filePath = Path.Combine(_testCacheDirectory, fileName);
+			File.WriteAllBytes(filePath, [1, 2, 3]);
+		}
+
+		Assert.Equal(3, Directory.GetFiles(_testCacheDirectory, "*.png").Length);
+
+		// Act
+		_imageCacheService.ClearCache();
+
+		// Assert
+		Assert.Empty(Directory.GetFiles(_testCacheDirectory, "*.png"));
+		
+		var stats = _imageCacheService.GetCacheStats();
+		Assert.Equal(0, stats.TotalEntries);
+		Assert.Equal(0, stats.HitCount);
+		Assert.Equal(0, stats.MissCount);
+	}
+
+	[Fact]
+	public void CleanupExpiredFiles_ShouldBeCallableFromInterface()
+	{
+		// Arrange
+		IImageCacheService cacheService = _imageCacheService;
+		
+		string character = "な";
+		string fileName = GetCacheFileNameForCharacter(character);
+		string filePath = Path.Combine(_testCacheDirectory, fileName);
+		
+		// Create a test file with old timestamp
+		byte[] testBytes = [1, 2, 3, 4];
+		File.WriteAllBytes(filePath, testBytes);
+		
+		// Set file timestamp to be older than expiration (2 hours ago)
+		DateTime oldTime = DateTime.UtcNow.AddHours(-2);
+		File.SetLastWriteTimeUtc(filePath, oldTime);
+
+		// Act - Should be callable through interface
+		cacheService.CleanupExpiredFiles();
+
+		// Assert
+		Assert.False(File.Exists(filePath));
+	}
+
+	/// <summary>
+	/// Helper method to get the expected cache filename for a character
+	/// This duplicates the logic from ImageCacheService.GetCacheFileName for testing
+	/// </summary>
+	private static string GetCacheFileNameForCharacter(string character)
+	{
+		using (System.Security.Cryptography.SHA256 sha256 = System.Security.Cryptography.SHA256.Create())
+		{
+			byte[] hash = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(character));
+			string hashString = Convert.ToHexString(hash)[..16];
+			return $"{hashString}.png";
+		}
 	}
 }

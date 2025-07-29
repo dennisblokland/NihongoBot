@@ -29,4 +29,9 @@ public interface IImageCacheService
 	/// </summary>
 	/// <returns>Cache statistics (hit count, miss count, total entries)</returns>
 	(int HitCount, int MissCount, int TotalEntries) GetCacheStats();
+
+	/// <summary>
+	/// Cleans up expired cache files
+	/// </summary>
+	void CleanupExpiredFiles();
 }
