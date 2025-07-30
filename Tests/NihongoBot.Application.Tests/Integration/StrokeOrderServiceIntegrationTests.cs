@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NihongoBot.Application.Services;
+using NihongoBot.Shared.Options;
 using Xunit;
 
 namespace NihongoBot.Application.Tests.Integration;
@@ -13,6 +15,15 @@ public class StrokeOrderServiceIntegrationTests
 		// Arrange
 		var services = new ServiceCollection();
 		services.AddLogging(builder => builder.AddConsole());
+		
+		// Add ImageCacheOptions configuration
+		services.Configure<ImageCacheOptions>(options =>
+		{
+			options.CacheDirectory = Path.Combine(Path.GetTempPath(), "test-integration-cache");
+			options.CacheExpirationHours = 168;
+			options.EnableCleanup = true;
+			options.CleanupIntervalHours = 24;
+		});
 		
 		// Add the HttpClient configuration for StrokeOrderService as done in production
 		services.AddHttpClient<StrokeOrderService>(client =>
@@ -51,6 +62,15 @@ public class StrokeOrderServiceIntegrationTests
 		// Arrange
 		var services = new ServiceCollection();
 		services.AddLogging(builder => builder.AddConsole());
+		
+		// Add ImageCacheOptions configuration
+		services.Configure<ImageCacheOptions>(options =>
+		{
+			options.CacheDirectory = Path.Combine(Path.GetTempPath(), "test-integration-cache-2");
+			options.CacheExpirationHours = 168;
+			options.EnableCleanup = true;
+			options.CleanupIntervalHours = 24;
+		});
 		
 		// Add the HttpClient configuration as done in ServiceCollectionExtensions
 		services.AddHttpClient<StrokeOrderService>(client =>
