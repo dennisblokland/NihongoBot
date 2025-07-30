@@ -47,6 +47,8 @@ public static class ServiceCollectionExtensions
 		services.AddOptions<ApplicationOptions>()
 			.BindConfiguration(ApplicationOptions.SectionKey);
 
+		services.AddOptions<ImageCacheOptions>()
+			.BindConfiguration(ImageCacheOptions.SectionKey);
 	}
 
 	private static void AddDatabaseContext(this IServiceCollection services, string connectionString)
@@ -111,6 +113,7 @@ public static class ServiceCollectionExtensions
 
 		// Image caching services
 		services.AddSingleton<IImageCacheService, ImageCacheService>();
+		services.AddHostedService<ImageCacheCleanupService>();
 
 
 		services.AddHttpClient<IJlptVocabApiService, JlptVocabApiService>(client =>
