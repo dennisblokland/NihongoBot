@@ -155,7 +155,7 @@ public class StrokeOrderService : IStrokeOrderService
 			_animationCache.TryAdd(character, animationBytes);
 			
 			// Cache to disk
-			await _imageCacheService.Cache(fileName, animationBytes);
+			await _imageCacheService.CacheAsync(fileName, animationBytes);
 
 			_logger.LogDebug("Successfully downloaded and cached stroke order animation for character: {Character}, size: {Size} bytes",
 				character, animationBytes.Length);

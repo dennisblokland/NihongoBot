@@ -13,7 +13,7 @@ public interface IImageCacheService
 	/// <param name="name"></param>
 	/// <param name="bytes"></param>
 	/// <returns></returns>
-	Task<ImageCache> Cache(string name, byte[] bytes);
+	Task<ImageCache> CacheAsync(string name, byte[] bytes);
 
 	/// <summary>
 	/// Gets a cached image for the specified character, or generates and caches it if not found

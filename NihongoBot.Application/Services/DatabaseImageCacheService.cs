@@ -182,7 +182,7 @@ public class DatabaseImageCacheService : IImageCacheService
 		return age.TotalHours > _options.CacheExpirationHours;
 	}
 
-	public Task<ImageCache> Cache(string name, byte[] bytes)
+	public async Task<ImageCache> CacheAsync(string name, byte[] bytes)
 	{
 		if (string.IsNullOrWhiteSpace(name))
 		{
@@ -199,15 +199,15 @@ public class DatabaseImageCacheService : IImageCacheService
 		await _repository.SaveChangesAsync();
 		return cachedImage;
 	}
-	
-	public Task<ImageCache?> TryGetAsync(string name)
+
+	public async Task<ImageCache?> TryGetAsync(string name)
 	{
 		if (string.IsNullOrWhiteSpace(name))
 		{
 			throw new ArgumentException("Name cannot be null or empty", nameof(name));
 		}
 
-		return _repository.GetByNameAsync(name, CancellationToken.None);
+		return await _repository.GetByNameAsync(name, CancellationToken.None);
 	}
 
 }
