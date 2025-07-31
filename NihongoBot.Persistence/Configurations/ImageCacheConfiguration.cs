@@ -10,9 +10,9 @@ public class ImageCacheConfiguration : IEntityTypeConfiguration<ImageCache>
 	{
 		builder.HasKey(x => x.Id);
 
-		builder.Property(x => x.Character)
+		builder.Property(x => x.Name)
 			.IsRequired()
-			.HasMaxLength(10); // Japanese characters can be up to 4 bytes in UTF-8, allowing for compound characters
+			.HasMaxLength(255); // Japanese characters can be up to 4 bytes in UTF-8, allowing for compound characters
 
 		builder.Property(x => x.CacheKey)
 			.IsRequired()
@@ -35,7 +35,7 @@ public class ImageCacheConfiguration : IEntityTypeConfiguration<ImageCache>
 			.HasDatabaseName("IX_ImageCache_CacheKey");
 
 		// Create index on Character for lookups by character
-		builder.HasIndex(x => x.Character)
+		builder.HasIndex(x => x.Name)
 			.IsUnique()
 			.HasDatabaseName("IX_ImageCache_Character");
 

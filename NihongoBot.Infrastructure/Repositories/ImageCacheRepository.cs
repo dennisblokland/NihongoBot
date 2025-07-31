@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using NihongoBot.Infrastructure.Repositories;
+
 using NihongoBot.Domain;
 using NihongoBot.Domain.Interfaces.Repositories;
 
@@ -14,7 +14,7 @@ public class ImageCacheRepository(IServiceProvider serviceProvider) : AbstractDo
 
 	public async Task<ImageCache?> GetByCharacterAsync(string character, CancellationToken cancellationToken = default)
 	{
-		return await DatabaseSet.FirstOrDefaultAsync(x => x.Character == character, cancellationToken);
+		return await DatabaseSet.FirstOrDefaultAsync(x => x.Name == character, cancellationToken);
 	}
 
 	public async Task<int> RemoveExpiredAsync(int expirationHours, CancellationToken cancellationToken = default)
@@ -48,5 +48,10 @@ public class ImageCacheRepository(IServiceProvider serviceProvider) : AbstractDo
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
 	{
 		return await DatabaseSet.CountAsync(cancellationToken);
+	}
+
+	public Task<ImageCache?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+	{
+		return DatabaseSet.FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
 	}
 }

@@ -113,7 +113,6 @@ public static class ServiceCollectionExtensions
 
 		// Image caching services
 		services.AddScoped<IImageCacheService, DatabaseImageCacheService>();
-		services.AddHostedService<ImageCacheCleanupService>();
 
 
 		services.AddHttpClient<IJlptVocabApiService, JlptVocabApiService>(client =>

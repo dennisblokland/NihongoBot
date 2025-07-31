@@ -4,17 +4,19 @@ namespace NihongoBot.Domain
 {
 	public class ImageCache : DomainEntity
 	{
-		public ImageCache(string character, byte[] imageData)
+		internal ImageCache() { } // EF Core constructor
+
+		public ImageCache(string name, byte[] imageData)
 		{
-			Character = character ?? throw new ArgumentNullException(nameof(character));
+			Name = name ?? throw new ArgumentNullException(nameof(name));
 			ImageData = imageData ?? throw new ArgumentNullException(nameof(imageData));
-			CacheKey = GenerateCacheKey(character);
+			CacheKey = GenerateCacheKey(name);
 		}
 
 		/// <summary>
-		/// The Japanese character this image represents
+		/// The name of the cached image, typically the character it represents
 		/// </summary>
-		public string Character { get; private set; }
+		public string Name { get; private set; }
 
 		/// <summary>
 		/// SHA256-based cache key for efficient lookups

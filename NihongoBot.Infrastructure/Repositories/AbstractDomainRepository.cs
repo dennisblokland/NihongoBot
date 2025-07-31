@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NihongoBot.Domain.Interfaces;
 using NihongoBot.Persistence;
 
-namespace Name.Infrastructure.Repositories;
+namespace NihongoBot.Infrastructure.Repositories;
 
 public abstract class AbstractDomainRepository<TEntity, TKey> : IDomainRepository<TEntity, TKey>
 	where TEntity : class, IDomainEntity, IDomainEntity<TKey>

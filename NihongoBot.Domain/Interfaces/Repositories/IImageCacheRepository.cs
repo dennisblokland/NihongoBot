@@ -42,4 +42,12 @@ public interface IImageCacheRepository : IDomainRepository<ImageCache, Guid>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>Total number of cache entries</returns>
 	Task<int> GetCountAsync(CancellationToken cancellationToken = default);
+
+	/// <summary>
+	/// Gets a cached image by name
+	/// </summary>
+	/// <param name="name">The name of the cached image</param>
+	/// <param name="cancellationToken"></param>
+	/// <returns></returns>
+	Task<ImageCache?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
 }

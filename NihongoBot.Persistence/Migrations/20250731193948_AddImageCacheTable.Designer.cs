@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NihongoBot.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250731092155_AddImageCacheTable")]
+    [Migration("20250731193948_AddImageCacheTable")]
     partial class AddImageCacheTable
     {
         /// <inheritdoc />
@@ -610,11 +610,6 @@ namespace NihongoBot.Persistence.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
-                    b.Property<string>("Character")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -625,6 +620,11 @@ namespace NihongoBot.Persistence.Migrations
                     b.Property<DateTime?>("LastAccessedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -634,7 +634,7 @@ namespace NihongoBot.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_ImageCache_CacheKey");
 
-                    b.HasIndex("Character")
+                    b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_ImageCache_Character");
 

@@ -16,7 +16,7 @@ namespace NihongoBot.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Character = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CacheKey = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     ImageData = table.Column<byte[]>(type: "bytea", nullable: false),
                     AccessCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
@@ -38,7 +38,7 @@ namespace NihongoBot.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ImageCache_Character",
                 table: "ImageCache",
-                column: "Character",
+                column: "Name",
                 unique: true);
 
             migrationBuilder.CreateIndex(

@@ -1,8 +1,6 @@
 
 using Microsoft.EntityFrameworkCore;
 
-using Name.Infrastructure.Repositories;
-
 using NihongoBot.Domain.Aggregates.Kana;
 using NihongoBot.Domain.Enums;
 using NihongoBot.Domain.Interfaces.Repositories;
