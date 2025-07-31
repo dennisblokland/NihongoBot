@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Name.Infrastructure.Repositories;
+using NihongoBot.Infrastructure.Repositories;
 using NihongoBot.Domain;
 using NihongoBot.Domain.Interfaces.Repositories;
 
