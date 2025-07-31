@@ -156,17 +156,14 @@ public class DatabaseImageCacheService : IImageCacheService
 		);
 	}
 
-	public void CleanupExpiredFiles()
+	public async Task CleanupExpiredFilesAsync()
 	{
-		Task.Run(async () =>
+		int removedCount = await _repository.RemoveExpiredAsync(_options.CacheExpirationHours);
+		if (removedCount > 0)
 		{
-			int removedCount = await _repository.RemoveExpiredAsync(_options.CacheExpirationHours);
-			if (removedCount > 0)
-			{
-				await _repository.SaveChangesAsync();
-				_logger.LogInformation("Cleaned up {Count} expired cache entries", removedCount);
-			}
-		});
+			await _repository.SaveChangesAsync();
+			_logger.LogInformation("Cleaned up {Count} expired cache entries", removedCount);
+		}
 	}
 
 	/// <summary>
