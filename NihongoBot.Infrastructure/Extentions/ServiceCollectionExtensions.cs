@@ -112,7 +112,7 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<CallbackDispatcher>();
 
 		// Image caching services
-		services.AddSingleton<IImageCacheService, ImageCacheService>();
+		services.AddScoped<IImageCacheService, DatabaseImageCacheService>();
 		services.AddHostedService<ImageCacheCleanupService>();
 
 

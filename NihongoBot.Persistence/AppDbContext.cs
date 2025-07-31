@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 using NihongoBot.Domain.Base;
+using NihongoBot.Domain;
 
 namespace NihongoBot.Persistence;
 
