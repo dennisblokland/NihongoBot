@@ -50,9 +50,6 @@ public class ImageCacheWarmupService : BackgroundService
 
 			// Warm up the cache
 			await imageCacheService.WarmCacheAsync(allCharacters, stoppingToken);
-
-			var stats = imageCacheService.GetCacheStats();
-			_logger.LogInformation("Image cache warmup completed. Cache contains {Count} images", stats.TotalEntries);
 		}
 		catch (Exception ex)
 		{

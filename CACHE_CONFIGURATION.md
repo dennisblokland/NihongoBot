@@ -1,10 +1,11 @@
 # Image Cache Configuration
 
-This implementation uses disk-based caching for generated Japanese character images. The cache provides several benefits:
+This implementation uses PostgreSQL-based caching for generated Japanese character images, providing better Docker compatibility compared to the previous file-based approach. The cache provides several benefits:
 
-- **Lower memory usage**: Images are stored on disk instead of RAM
-- **Persistence**: Cache survives application restarts
-- **Scalability**: Better for handling large numbers of characters
+- **Docker-friendly**: Works seamlessly in containerized environments without file system permissions issues
+- **Persistence**: Cache survives application restarts and deployments
+- **Scalability**: Better for handling large numbers of characters with database-backed storage
+- **Reliability**: Leverages existing PostgreSQL infrastructure for consistency
 
 ## Configuration Options
 
@@ -13,7 +14,6 @@ The cache behavior is controlled via the `ImageCache` section in `appsettings.js
 ```json
 {
   "ImageCache": {
-    "CacheDirectory": "cache/images",
     "CacheExpirationHours": 168,
     "EnableCleanup": true,
     "CleanupIntervalHours": 24
@@ -23,36 +23,32 @@ The cache behavior is controlled via the `ImageCache` section in `appsettings.js
 
 ### Configuration Properties
 
-- **CacheDirectory**: Directory where cached images are stored (default: `cache/images`)
 - **CacheExpirationHours**: How long images are kept before being considered expired (default: 168 hours = 1 week)
 - **EnableCleanup**: Whether to automatically clean up expired images (default: `true`)
 - **CleanupIntervalHours**: How often to run cleanup (default: 24 hours)
 
-## Docker Deployment
+## Database Schema
 
-When running in Docker, consider adding a volume mount for the cache directory to persist images across container restarts:
+The cache stores images in a dedicated `ImageCache` table with the following structure:
 
-```yaml
-services:
-  nihongobot:
-    volumes:
-      - nihongobot-cache:/app/cache/images
-```
+- **Id**: Primary key (GUID)
+- **Character**: The Japanese character (indexed for fast lookups)
+- **CacheKey**: SHA256-based hash for efficient retrieval (unique index)
+- **ImageData**: PNG image bytes stored as `bytea` in PostgreSQL
+- **AccessCount**: Number of times the image has been accessed
+- **LastAccessedAt**: Timestamp of last access
+- **CreatedAt/UpdatedAt**: Audit timestamps managed by the domain entity
 
-Or using bind mounts:
+## Migration from File-based Cache
 
-```yaml
-services:
-  nihongobot:
-    volumes:
-      - ./cache:/app/cache/images
-```
+The application now uses `DatabaseImageCacheService` instead of the file-based `ImageCacheService` for character image caching. The old file-based service is still available for other components that may need it (like StrokeOrderService).
 
-This ensures that generated images are preserved when containers are restarted or updated.
+No manual migration is required - the new system will automatically regenerate images as needed and store them in the database.
 
 ## Cache Implementation Details
 
-- Images are stored as PNG files with SHA256 hash filenames to avoid filesystem conflicts
+- Images are stored as binary data in PostgreSQL with SHA256 hash-based cache keys
 - Cache cleanup runs as a background service when enabled
-- Thread-safe operations using semaphores for file writes
+- Thread-safe operations using Entity Framework Core
 - Cache statistics (hit/miss counts) are available for monitoring
+- Access tracking to monitor cache usage patterns

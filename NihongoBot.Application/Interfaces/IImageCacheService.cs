@@ -1,3 +1,5 @@
+using NihongoBot.Domain;
+
 namespace NihongoBot.Application.Interfaces;
 
 /// <summary>
@@ -5,6 +7,14 @@ namespace NihongoBot.Application.Interfaces;
 /// </summary>
 public interface IImageCacheService
 {
+	/// <summary>
+	/// Manually caches an image by name
+	/// </summary>
+	/// <param name="name"></param>
+	/// <param name="bytes"></param>
+	/// <returns></returns>
+	Task<ImageCache> CacheAsync(string name, byte[] bytes);
+
 	/// <summary>
 	/// Gets a cached image for the specified character, or generates and caches it if not found
 	/// </summary>
@@ -20,18 +30,9 @@ public interface IImageCacheService
 	Task WarmCacheAsync(IEnumerable<string> characters, CancellationToken cancellationToken = default);
 
 	/// <summary>
-	/// Clears the image cache
+	/// Tries to get a cached image by name
 	/// </summary>
-	void ClearCache();
-
-	/// <summary>
-	/// Gets cache statistics
-	/// </summary>
-	/// <returns>Cache statistics (hit count, miss count, total entries)</returns>
-	(int HitCount, int MissCount, int TotalEntries) GetCacheStats();
-
-	/// <summary>
-	/// Cleans up expired cache files
-	/// </summary>
-	void CleanupExpiredFiles();
+	/// <param name="name"></param>
+	/// <returns></returns>
+	Task<ImageCache?> TryGetAsync(string name);
 }

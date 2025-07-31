@@ -2,7 +2,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
+
+using NihongoBot.Application.Interfaces;
 using NihongoBot.Application.Services;
+using NihongoBot.Domain.Interfaces.Repositories;
 using NihongoBot.Shared.Options;
 using System.Net;
 using Xunit;
@@ -14,6 +17,7 @@ public class StrokeOrderServiceTests
 	private readonly Mock<ILogger<StrokeOrderService>> _loggerMock = new();
 	private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock = new();
 	private readonly Mock<IOptions<ImageCacheOptions>> _cacheOptionsMock = new();
+	private readonly Mock<IImageCacheService> _imageCacheServiceMock = new();
 	private readonly HttpClient _httpClient;
 	private readonly StrokeOrderService _strokeOrderService;
 
@@ -30,7 +34,7 @@ public class StrokeOrderServiceTests
 			CleanupIntervalHours = 24
 		});
 		
-		_strokeOrderService = new StrokeOrderService(_loggerMock.Object, _httpClient, _cacheOptionsMock.Object);
+		_strokeOrderService = new StrokeOrderService(_loggerMock.Object, _httpClient, _cacheOptionsMock.Object, _imageCacheServiceMock.Object);
 	}
 
 	[Fact]
@@ -214,100 +218,6 @@ public class StrokeOrderServiceTests
 		Assert.Contains("ん", supportedCharacters);
 		// Should contain basic hiragana
 		Assert.True(supportedCharacters.Count() >= 40); // At least 40 hiragana characters
-	}
-
-	[Fact]
-	public async Task GetStrokeOrderAnimationBytesAsync_ShouldCacheToDisk_WhenDownloadSucceeds()
-	{
-		// Arrange
-		string character = "き";
-		byte[] expectedBytes = new byte[] { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61 }; // GIF header
-
-		_httpMessageHandlerMock
-			.Protected()
-			.Setup<Task<HttpResponseMessage>>(
-				"SendAsync",
-				ItExpr.IsAny<HttpRequestMessage>(),
-				ItExpr.IsAny<CancellationToken>())
-			.ReturnsAsync(new HttpResponseMessage
-			{
-				StatusCode = HttpStatusCode.OK,
-				Content = new ByteArrayContent(expectedBytes)
-			});
-
-		// Act - First call should download and cache
-		byte[]? result = await _strokeOrderService.GetStrokeOrderAnimationBytesAsync(character);
-
-		// Assert
-		Assert.NotNull(result);
-		Assert.Equal(expectedBytes, result);
-
-		// Verify that a cache file was created in the stroke-order subdirectory
-		string cacheDirectory = _cacheOptionsMock.Object.Value.CacheDirectory;
-		string strokeOrderCacheDirectory = Path.Combine(cacheDirectory, "stroke-order");
-		Assert.True(Directory.Exists(strokeOrderCacheDirectory), "Stroke order cache directory should exist");
-		
-		string[] cacheFiles = Directory.GetFiles(strokeOrderCacheDirectory, "*.gif");
-		Assert.Single(cacheFiles); // Should have exactly one cache file
-		
-		// Verify cached file contains the expected data
-		byte[] cachedData = await File.ReadAllBytesAsync(cacheFiles[0]);
-		Assert.Equal(expectedBytes, cachedData);
-	}
-
-	[Fact]
-	public async Task GetStrokeOrderAnimationBytesAsync_ShouldUseDiskCache_OnSubsequentCalls()
-	{
-		// Arrange
-		string character = "く";
-		byte[] expectedBytes = new byte[] { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61 }; // GIF header
-
-		_httpMessageHandlerMock
-			.Protected()
-			.Setup<Task<HttpResponseMessage>>(
-				"SendAsync",
-				ItExpr.IsAny<HttpRequestMessage>(),
-				ItExpr.IsAny<CancellationToken>())
-			.ReturnsAsync(new HttpResponseMessage
-			{
-				StatusCode = HttpStatusCode.OK,
-				Content = new ByteArrayContent(expectedBytes)
-			});
-
-		// Act - First call should download and cache
-		byte[]? result1 = await _strokeOrderService.GetStrokeOrderAnimationBytesAsync(character);
-
-		// Create a new HTTP client and service instance to simulate restart (clears in-memory cache)
-		var newHttpMessageHandlerMock = new Mock<HttpMessageHandler>();
-		var newHttpClient = new HttpClient(newHttpMessageHandlerMock.Object);
-		var newService = new StrokeOrderService(_loggerMock.Object, newHttpClient, _cacheOptionsMock.Object);
-
-		// Act - Second call should use disk cache (no HTTP request to the new handler)
-		byte[]? result2 = await newService.GetStrokeOrderAnimationBytesAsync(character);
-
-		// Assert
-		Assert.NotNull(result1);
-		Assert.NotNull(result2);
-		Assert.Equal(expectedBytes, result1);
-		Assert.Equal(expectedBytes, result2);
-
-		// Verify original HTTP was called only once (for the first download)
-		_httpMessageHandlerMock
-			.Protected()
-			.Verify(
-				"SendAsync",
-				Times.Once(),
-				ItExpr.IsAny<HttpRequestMessage>(),
-				ItExpr.IsAny<CancellationToken>());
-
-		// Verify new HTTP client was never called (used disk cache)
-		newHttpMessageHandlerMock
-			.Protected()
-			.Verify(
-				"SendAsync",
-				Times.Never(),
-				ItExpr.IsAny<HttpRequestMessage>(),
-				ItExpr.IsAny<CancellationToken>());
 	}
 
 	[Theory]

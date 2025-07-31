@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NihongoBot.Application.Interfaces;
+using NihongoBot.Domain;
 using NihongoBot.Shared.Options;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
@@ -18,7 +19,9 @@ public class StrokeOrderService : IStrokeOrderService
 	private readonly ConcurrentDictionary<string, byte[]?> _animationCache;
 	private readonly ImageCacheOptions _cacheOptions;
 	private readonly string _strokeOrderCacheDirectory;
-	private readonly SemaphoreSlim _diskCacheSemaphore;
+
+	private readonly IImageCacheService _imageCacheService;
+
 
 	// Mapping of Hiragana characters to their Wikipedia stroke order animation URLs
 	private readonly Dictionary<string, string> _strokeOrderUrls = new()
@@ -72,20 +75,20 @@ public class StrokeOrderService : IStrokeOrderService
 		{ "ん", "https://en.wikipedia.org/wiki/Special:FilePath/Hiragana_%E3%82%93_stroke_order_animation.gif" }
 	};
 
-	public StrokeOrderService(ILogger<StrokeOrderService> logger, HttpClient httpClient, IOptions<ImageCacheOptions> cacheOptions)
+	public StrokeOrderService(ILogger<StrokeOrderService> logger, HttpClient httpClient, IOptions<ImageCacheOptions> cacheOptions, IImageCacheService imageCacheService)
 	{
 		_logger = logger;
 		_httpClient = httpClient;
 		_animationCache = new ConcurrentDictionary<string, byte[]?>();
 		_cacheOptions = cacheOptions.Value;
-		_diskCacheSemaphore = new SemaphoreSlim(1, 1);
-		
+
 		// Create stroke-order specific cache directory
 		_strokeOrderCacheDirectory = Path.Combine(_cacheOptions.CacheDirectory, "stroke-order");
 		Directory.CreateDirectory(_strokeOrderCacheDirectory);
-		
+
 		// Set a reasonable timeout for downloading animations
 		_httpClient.Timeout = TimeSpan.FromSeconds(30);
+		_imageCacheService = imageCacheService;
 	}
 
 	public string? GetStrokeOrderAnimationUrl(string character)
@@ -122,25 +125,15 @@ public class StrokeOrderService : IStrokeOrderService
 			return cachedAnimation;
 		}
 
-		// Check disk cache next
-		string diskFileName = GetDiskCacheFileName(character);
-		string diskFilePath = Path.Combine(_strokeOrderCacheDirectory, diskFileName);
+		// Check database cache next
+		string fileName = GetCacheFileName(character);
 		
-		if (File.Exists(diskFilePath))
+		ImageCache? cachedImage = await _imageCacheService.TryGetAsync(fileName);
+		if (cachedImage != null)
 		{
-			try
-			{
-				byte[] diskCachedBytes = await File.ReadAllBytesAsync(diskFilePath, cancellationToken);
-				// Add to in-memory cache for faster future access
-				_animationCache.TryAdd(character, diskCachedBytes);
-				_logger.LogDebug("Stroke order animation disk cache hit for character: {Character}", character);
-				return diskCachedBytes;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogWarning(ex, "Failed to read cached stroke order animation from disk for character: {Character}", character);
-				// Continue to download if disk read fails
-			}
+			_logger.LogDebug("Stroke order animation database cache hit for character: {Character}", character);
+			_animationCache.TryAdd(character, cachedImage.ImageData);
+			return cachedImage.ImageData;
 		}
 
 		// Get URL for the character
@@ -162,9 +155,9 @@ public class StrokeOrderService : IStrokeOrderService
 			_animationCache.TryAdd(character, animationBytes);
 			
 			// Cache to disk
-			await CacheToDiskAsync(character, animationBytes, diskFilePath);
-			
-			_logger.LogDebug("Successfully downloaded and cached stroke order animation for character: {Character}, size: {Size} bytes", 
+			await _imageCacheService.CacheAsync(fileName, animationBytes);
+
+			_logger.LogDebug("Successfully downloaded and cached stroke order animation for character: {Character}, size: {Size} bytes",
 				character, animationBytes.Length);
 			
 			return animationBytes;
@@ -198,38 +191,13 @@ public class StrokeOrderService : IStrokeOrderService
 	/// </summary>
 	/// <param name="character">The character to get filename for</param>
 	/// <returns>Safe filename with .gif extension</returns>
-	private static string GetDiskCacheFileName(string character)
+	private static string GetCacheFileName(string character)
 	{
 		using (SHA256 sha256 = SHA256.Create())
 		{
 			byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes($"stroke_order_{character}"));
 			string hashString = Convert.ToHexString(hash)[..16]; // Use first 16 characters
 			return $"{hashString}.gif";
-		}
-	}
-
-	/// <summary>
-	/// Caches animation bytes to disk with thread safety
-	/// </summary>
-	/// <param name="character">The character being cached</param>
-	/// <param name="animationBytes">The animation bytes to cache</param>
-	/// <param name="filePath">The file path to save to</param>
-	private async Task CacheToDiskAsync(string character, byte[] animationBytes, string filePath)
-	{
-		await _diskCacheSemaphore.WaitAsync();
-		try
-		{
-			await File.WriteAllBytesAsync(filePath, animationBytes);
-			_logger.LogDebug("Cached stroke order animation for character: {Character} to disk: {FilePath}", character, Path.GetFileName(filePath));
-		}
-		catch (Exception ex)
-		{
-			_logger.LogWarning(ex, "Failed to cache stroke order animation to disk for character: {Character}", character);
-			// Don't rethrow - disk caching failure shouldn't break the main functionality
-		}
-		finally
-		{
-			_diskCacheSemaphore.Release();
 		}
 	}
 }
