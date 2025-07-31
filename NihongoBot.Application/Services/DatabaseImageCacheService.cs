@@ -195,8 +195,9 @@ public class DatabaseImageCacheService : IImageCacheService
 		}
 
 		ImageCache cachedImage = new(name, bytes);
-		_repository.AddAsync(cachedImage, CancellationToken.None);
-		return _repository.SaveChangesAsync().ContinueWith(_ => cachedImage);
+		await _repository.AddAsync(cachedImage, CancellationToken.None);
+		await _repository.SaveChangesAsync();
+		return cachedImage;
 	}
 	
 	public Task<ImageCache?> TryGetAsync(string name)
