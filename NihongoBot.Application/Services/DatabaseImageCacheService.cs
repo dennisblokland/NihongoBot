@@ -149,9 +149,9 @@ public class DatabaseImageCacheService : IImageCacheService
 		});
 	}
 
-	public (int HitCount, int MissCount, int TotalEntries) GetCacheStats()
+	public async Task<(int HitCount, int MissCount, int TotalEntries)> GetCacheStatsAsync()
 	{
-		int totalEntries = Task.Run(async () => await _repository.GetCountAsync()).Result;
+		int totalEntries = await _repository.GetCountAsync();
 		return (
 			HitCount: _hitCount,
 			MissCount: _missCount,
