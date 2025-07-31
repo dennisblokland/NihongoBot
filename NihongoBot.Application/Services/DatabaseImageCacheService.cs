@@ -136,17 +136,14 @@ public class DatabaseImageCacheService : IImageCacheService
 		_logger.LogInformation("Cache warming completed. Total cached images: {Count}", totalCached);
 	}
 
-	public void ClearCache()
+	public async Task ClearCacheAsync()
 	{
-		Task.Run(async () =>
-		{
-			int removedCount = await _repository.ClearAllAsync();
-			await _repository.SaveChangesAsync();
-			
-			Interlocked.Exchange(ref _hitCount, 0);
-			Interlocked.Exchange(ref _missCount, 0);
-			_logger.LogInformation("Cache cleared. Removed {Count} cached images", removedCount);
-		});
+		int removedCount = await _repository.ClearAllAsync();
+		await _repository.SaveChangesAsync();
+		
+		Interlocked.Exchange(ref _hitCount, 0);
+		Interlocked.Exchange(ref _missCount, 0);
+		_logger.LogInformation("Cache cleared. Removed {Count} cached images", removedCount);
 	}
 
 	public async Task<(int HitCount, int MissCount, int TotalEntries)> GetCacheStatsAsync()
