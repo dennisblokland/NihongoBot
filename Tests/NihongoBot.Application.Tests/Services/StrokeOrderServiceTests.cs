@@ -28,7 +28,6 @@ public class StrokeOrderServiceTests
 		// Setup mock cache options
 		_cacheOptionsMock.Setup(x => x.Value).Returns(new ImageCacheOptions
 		{
-			CacheDirectory = Path.Combine(Path.GetTempPath(), "test-cache", Guid.NewGuid().ToString()),
 			CacheExpirationHours = 168, // 1 week
 			EnableCleanup = true,
 			CleanupIntervalHours = 24

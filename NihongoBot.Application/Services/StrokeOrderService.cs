@@ -82,9 +82,6 @@ public class StrokeOrderService : IStrokeOrderService
 		_animationCache = new ConcurrentDictionary<string, byte[]?>();
 		_cacheOptions = cacheOptions.Value;
 
-		// Create stroke-order specific cache directory
-		_strokeOrderCacheDirectory = Path.Combine(_cacheOptions.CacheDirectory, "stroke-order");
-		Directory.CreateDirectory(_strokeOrderCacheDirectory);
 
 		// Set a reasonable timeout for downloading animations
 		_httpClient.Timeout = TimeSpan.FromSeconds(30);

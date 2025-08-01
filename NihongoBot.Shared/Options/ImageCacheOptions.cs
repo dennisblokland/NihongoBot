@@ -5,11 +5,6 @@ public class ImageCacheOptions : IConfigOptions
 	public const string SectionKey = "ImageCache";
 
 	/// <summary>
-	/// Directory path where cached files will be stored (used by StrokeOrderService)
-	/// </summary>
-	public string CacheDirectory { get; set; } = "cache/images";
-
-	/// <summary>
 	/// Maximum age of cached images in hours before they are considered expired
 	/// </summary>
 	public int CacheExpirationHours { get; set; } = 24 * 7; // 1 week default
