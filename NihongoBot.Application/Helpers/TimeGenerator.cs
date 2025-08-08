@@ -22,21 +22,19 @@ namespace NihongoBot.Application.Helpers
 				return possibleTimes; // Return all possible times if count exceeds available slots
 			}
 
-			// Divide the range into `count` segments
-			int segmentSize = possibleTimes.Count / count;
+                        // Divide the range into `count` segments using floating-point division
+                        for (int i = 0; i < count; i++)
+                        {
+                                // Compute segment boundaries so that the final segment reaches the last index
+                                int minIndex = (int)Math.Floor((double)i * possibleTimes.Count / count);
+                                int maxIndex = (int)Math.Floor((double)(i + 1) * possibleTimes.Count / count) - 1;
 
-			for (int i = 0; i < count; i++)
-			{
-				// Pick a random time within each segment
-				int minIndex = i * segmentSize;
-				int maxIndex = Math.Min((i + 1) * segmentSize, possibleTimes.Count) - 1;
-
-				if (minIndex <= maxIndex)
-				{
-					int randomIndex = rand.Next(minIndex, maxIndex + 1);
-					result.Add(possibleTimes[randomIndex]);
-				}
-			}
+                                if (minIndex <= maxIndex)
+                                {
+                                        int randomIndex = rand.Next(minIndex, maxIndex + 1);
+                                        result.Add(possibleTimes[randomIndex]);
+                                }
+                        }
 
 			result.Sort(); // Sort times in ascending order
 			return result;
