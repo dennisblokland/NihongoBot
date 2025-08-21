@@ -1,0 +1,392 @@
+@page "/admin/admin-users"
+@attribute [Authorize]
+@inject AdminUserService AdminUserService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Admin Users</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Admin Users</h1>
+    <button class="btn btn-primary" @onclick="ShowCreateModal">
+        <i class="bi bi-plus-circle"></i> Create Admin User
+    </button>
+</div>
+
+@if (loading)
+{
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (adminUsers?.Any() == true)
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Last Login</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in adminUsers)
+                {
+                    <tr>
+                        <td class="fw-bold">@user.Username</td>
+                        <td>@user.Email</td>
+                        <td>
+                            @if (user.IsEnabled)
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Disabled</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.LastLoginAt.HasValue)
+                            {
+                                <small>@user.LastLoginAt.Value.ToString("MM/dd/yyyy HH:mm")</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">Never</small>
+                            }
+                        </td>
+                        <td>
+                            @if (user.CreatedAt.HasValue)
+                            {
+                                <small>@user.CreatedAt.Value.ToString("MM/dd/yyyy")</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">Unknown</small>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" @onclick="() => ShowEditModal(user)">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                @if (user.IsEnabled)
+                                {
+                                    <button class="btn btn-outline-warning" @onclick="() => DisableUser(user)">
+                                        <i class="bi bi-pause-circle"></i> Disable
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline-success" @onclick="() => EnableUser(user)">
+                                        <i class="bi bi-play-circle"></i> Enable
+                                    </button>
+                                }
+                                <button class="btn btn-outline-danger" @onclick="() => ConfirmDelete(user)">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No admin users found. <a href="#" @onclick="ShowCreateModal">Create the first admin user</a>.
+    </div>
+}
+
+<!-- Create/Edit Modal -->
+@if (showModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingUser == null ? "Create" : "Edit") Admin User</h5>
+                    <button type="button" class="btn-close" @onclick="CancelModal"></button>
+                </div>
+                <EditForm Model="formModel" OnValidSubmit="SaveUser">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">@errorMessage</div>
+                        }
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <InputText @bind-Value="formModel.Username" class="form-control" />
+                            <ValidationMessage For="() => formModel.Username" class="text-danger" />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="formModel.Email" type="email" class="form-control" />
+                            <ValidationMessage For="() => formModel.Email" class="text-danger" />
+                        </div>
+                        
+                        @if (editingUser == null)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <InputText @bind-Value="formModel.Password" type="password" class="form-control" />
+                                <ValidationMessage For="() => formModel.Password" class="text-danger" />
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Confirm Password</label>
+                                <InputText @bind-Value="formModel.ConfirmPassword" type="password" class="form-control" />
+                                <ValidationMessage For="() => formModel.ConfirmPassword" class="text-danger" />
+                            </div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CancelModal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" disabled="@saving">
+                            @if (saving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            @(editingUser == null ? "Create" : "Save")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteConfirmation && userToDelete != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this admin user?</p>
+                    <p><strong>Username:</strong> @userToDelete.Username</p>
+                    <p><strong>Email:</strong> @userToDelete.Email</p>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        This action cannot be undone. The user will lose access to the admin interface.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="DeleteUser" disabled="@deleting">
+                        @if (deleting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Delete User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<NihongoBot.Domain.Aggregates.AdminUser.AdminUser>? adminUsers;
+    private bool loading = true;
+    private bool saving = false;
+    private bool deleting = false;
+    private bool showModal = false;
+    private bool showDeleteConfirmation = false;
+    private string errorMessage = "";
+    
+    private NihongoBot.Domain.Aggregates.AdminUser.AdminUser? editingUser;
+    private NihongoBot.Domain.Aggregates.AdminUser.AdminUser? userToDelete;
+    private AdminUserFormModel formModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        loading = true;
+        try
+        {
+            adminUsers = (await AdminUserService.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading admin users: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ShowCreateModal()
+    {
+        editingUser = null;
+        formModel = new AdminUserFormModel();
+        errorMessage = "";
+        showModal = true;
+    }
+
+    private void ShowEditModal(NihongoBot.Domain.Aggregates.AdminUser.AdminUser user)
+    {
+        editingUser = user;
+        formModel = new AdminUserFormModel
+        {
+            Username = user.Username,
+            Email = user.Email
+        };
+        errorMessage = "";
+        showModal = true;
+    }
+
+    private void CancelModal()
+    {
+        showModal = false;
+        editingUser = null;
+        formModel = new();
+        errorMessage = "";
+        saving = false;
+    }
+
+    private async Task SaveUser()
+    {
+        saving = true;
+        errorMessage = "";
+        
+        try
+        {
+            if (editingUser == null)
+            {
+                // Create new user
+                var result = await AdminUserService.CreateAsync(formModel.Email, formModel.Username, formModel.Password);
+                if (result.Success)
+                {
+                    await LoadUsers();
+                    CancelModal();
+                }
+                else
+                {
+                    errorMessage = string.Join(", ", result.Errors);
+                }
+            }
+            else
+            {
+                // Update existing user
+                var success = await AdminUserService.UpdateAsync(editingUser.Id, formModel.Email, formModel.Username);
+                if (success)
+                {
+                    await LoadUsers();
+                    CancelModal();
+                }
+                else
+                {
+                    errorMessage = "Failed to update user. Email or username may already be in use.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task EnableUser(NihongoBot.Domain.Aggregates.AdminUser.AdminUser user)
+    {
+        try
+        {
+            await AdminUserService.EnableAsync(user.Id);
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error enabling user: {ex.Message}");
+        }
+    }
+
+    private async Task DisableUser(NihongoBot.Domain.Aggregates.AdminUser.AdminUser user)
+    {
+        try
+        {
+            await AdminUserService.DisableAsync(user.Id);
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error disabling user: {ex.Message}");
+        }
+    }
+
+    private void ConfirmDelete(NihongoBot.Domain.Aggregates.AdminUser.AdminUser user)
+    {
+        userToDelete = user;
+        showDeleteConfirmation = true;
+    }
+
+    private void CancelDelete()
+    {
+        userToDelete = null;
+        showDeleteConfirmation = false;
+        deleting = false;
+    }
+
+    private async Task DeleteUser()
+    {
+        if (userToDelete == null) return;
+
+        deleting = true;
+        try
+        {
+            var success = await AdminUserService.DeleteAsync(userToDelete.Id);
+            if (success)
+            {
+                await LoadUsers();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting user: {ex.Message}");
+        }
+        finally
+        {
+            CancelDelete();
+        }
+    }
+
+    public class AdminUserFormModel
+    {
+        [Required]
+        [StringLength(256, MinimumLength = 3)]
+        public string Username { get; set; } = "";
+
+        [Required]
+        [EmailAddress]
+        [StringLength(256)]
+        public string Email { get; set; } = "";
+
+        [StringLength(100, MinimumLength = 6)]
+        public string Password { get; set; } = "";
+
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

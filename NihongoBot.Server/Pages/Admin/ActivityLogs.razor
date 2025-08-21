@@ -1,0 +1,127 @@
+@page "/admin/activity-logs"
+@attribute [Authorize]
+@inject ActivityLogService ActivityLogService
+
+<PageTitle>Activity Logs</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Activity Logs</h1>
+    <button class="btn btn-outline-primary" @onclick="LoadLogs">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+    </button>
+</div>
+
+@if (loading)
+{
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (logs?.Any() == true)
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Entity Type</th>
+                    <th>Entity ID</th>
+                    <th>User</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in logs)
+                {
+                    <tr>
+                        <td>
+                            <small>@log.Timestamp.ToString("MM/dd/yyyy HH:mm:ss")</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-@GetActionBadgeColor(log.Action)">@log.Action</span>
+                        </td>
+                        <td>@log.EntityType</td>
+                        <td>
+                            <code>@log.EntityId</code>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(log.UserType))
+                            {
+                                <small>@log.UserType</small>
+                                @if (!string.IsNullOrEmpty(log.UserId))
+                                {
+                                    <br><code>@log.UserId</code>
+                                }
+                            }
+                            else
+                            {
+                                <small class="text-muted">System</small>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(log.Details))
+                            {
+                                <small>@log.Details</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">No details</small>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No activity logs found.
+    </div>
+}
+
+@code {
+    private List<NihongoBot.Domain.Aggregates.ActivityLog.ActivityLog>? logs;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLogs();
+    }
+
+    private async Task LoadLogs()
+    {
+        loading = true;
+        try
+        {
+            logs = (await ActivityLogService.GetRecentAsync(100)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading activity logs: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string GetActionBadgeColor(string action)
+    {
+        return action.ToLower() switch
+        {
+            "create" => "success",
+            "update" => "primary",
+            "delete" => "danger",
+            "enable" => "success",
+            "disable" => "warning",
+            "error" => "danger",
+            "exception" => "danger",
+            _ => "secondary"
+        };
+    }
+}
