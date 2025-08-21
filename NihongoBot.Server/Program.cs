@@ -34,7 +34,9 @@ using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope
 
 WebApplication app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+// Serve Blazor WebAssembly client
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
@@ -56,4 +58,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 		}),
 	],
 });
+
+// SPA fallback to Blazor index.html
+app.MapFallbackToFile("index.html");
 app.Run();

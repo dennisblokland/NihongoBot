@@ -11,6 +11,7 @@
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.21" />
     <PackageReference Include="Hangfire.Dashboard.BasicAuthorization" Version="1.0.2" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.20.12" />
+  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0" />
     <PackageReference Include="Telegram.Bot" Version="22.6.2" />
   </ItemGroup>
   <ItemGroup>
@@ -18,5 +19,6 @@
     <ProjectReference Include="..\NihongoBot.Persistence\NihongoBot.Persistence.csproj" />
     <ProjectReference Include="..\NihongoBot.Application\NihongoBot.Application.csproj" />
     <ProjectReference Include="..\NihongoBot.Infrastructure\NihongoBot.Infrastructure.csproj" />
+  <ProjectReference Include="..\NihongoBot.Client\NihongoBot.Client.csproj" />
   </ItemGroup>
 </Project>
