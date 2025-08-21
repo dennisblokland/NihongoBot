@@ -22,6 +22,9 @@ builder.Configuration
 
 builder.Services.AddInfrastructureServices();
 
+// Add controllers for API endpoints
+builder.Services.AddControllers();
+
 // Add Identity services
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
 	.AddEntityFrameworkStores<AppDbContext>()
@@ -84,6 +87,9 @@ WebApplication app = builder.Build();
 // Configure authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map API controllers
+app.MapControllers();
 
 // Serve Blazor WebAssembly client
 app.UseBlazorFrameworkFiles();
