@@ -215,7 +215,8 @@ public class HangfireSchedulerService
 			}
 			_questionRepository.Update(question);
 		}
-
+		
+		await _questionRepository.SaveChangesAsync(cancellationToken);
 		IEnumerable<Question> unansweredQuestions = await _questionRepository.GetExpiredPendingAcceptanceQuestionsAsync(cancellationToken);
 
 		foreach (Question question in unansweredQuestions)
