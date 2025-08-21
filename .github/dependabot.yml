@@ -12,5 +12,4 @@ updates:
     groups:
       efcore:
         patterns:
-          - "Microsoft.EntityFrameworkCore*"
-          - "Microsoft.Extensions.Options"
+          - "Microsoft.*"
