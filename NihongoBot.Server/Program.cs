@@ -52,6 +52,7 @@ builder.Services.AddScoped<AdminUserService>();
 builder.Services.AddScoped<TelegramUserService>();
 builder.Services.AddScoped<ActivityLogService>();
 builder.Services.AddScoped<SystemMonitoringService>();
+builder.Services.AddScoped<DatabaseSeederService>();
 
 builder.Services.AddHangfireServer(options => options.ServerName = "Hangfire Server");
 
@@ -61,6 +62,10 @@ using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope
 {
 	AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 	dbContext.Database.Migrate();
+	
+	// Seed default admin user
+	DatabaseSeederService seederService = scope.ServiceProvider.GetRequiredService<DatabaseSeederService>();
+	await seederService.SeedDefaultAdminUserAsync();
 	
 	HangfireSchedulerService hangfireSchedulerService = scope.ServiceProvider.GetRequiredService<HangfireSchedulerService>();
 	await hangfireSchedulerService.InitializeSchedulerAsync();
