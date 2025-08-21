@@ -58,10 +58,28 @@ builder.Services.AddHangfireServer(options => options.ServerName = "Hangfire Ser
 
 builder.Services.AddScoped<HiraganaService>();
 
-using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope())
+// Move seeding to after app is built to have proper async context
+WebApplication app = builder.Build();
+
+// Database migration and seeding
+await InitializeApplicationAsync(app);
+
+async Task InitializeApplicationAsync(WebApplication application)
 {
+	using IServiceScope scope = application.Services.CreateScope();
 	AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-	dbContext.Database.Migrate();
+	
+	// Use different database initialization strategies based on provider
+	if (dbContext.Database.IsSqlite())
+	{
+		// For SQLite (development), ensure database is created
+		await dbContext.Database.EnsureCreatedAsync();
+	}
+	else
+	{
+		// For PostgreSQL (production), use migrations
+		dbContext.Database.Migrate();
+	}
 	
 	// Seed default admin user
 	DatabaseSeederService seederService = scope.ServiceProvider.GetRequiredService<DatabaseSeederService>();
@@ -70,8 +88,6 @@ using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope
 	HangfireSchedulerService hangfireSchedulerService = scope.ServiceProvider.GetRequiredService<HangfireSchedulerService>();
 	await hangfireSchedulerService.InitializeSchedulerAsync();
 }
-
-WebApplication app = builder.Build();
 
 // Configure pipeline
 if (!app.Environment.IsDevelopment())
