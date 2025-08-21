@@ -13,3 +13,4 @@ updates:
       efcore:
         patterns:
           - "Microsoft.EntityFrameworkCore*"
+          - "Microsoft.Extensions.Options"
