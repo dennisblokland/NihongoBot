@@ -1,7 +1,10 @@
 @page "/admin"
 @layout AdminLayout
 @using NihongoBot.Shared.Models
+@using NihongoBot.Client.Services
 @inject HttpClient Http
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
 
 <h1>Admin Dashboard</h1>
 
@@ -168,6 +171,13 @@
 
 	protected override async Task OnInitializedAsync()
 	{
+		// Check authentication first
+		if (!await AuthService.IsAuthenticatedAsync())
+		{
+			Navigation.NavigateTo("/admin/login");
+			return;
+		}
+
 		await LoadDashboardData();
 	}
 
