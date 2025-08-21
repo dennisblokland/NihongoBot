@@ -43,6 +43,13 @@ public class HangfireSchedulerService
 		_jlptVocabApiService = jlptVocabApiService;
 	}
 
+	private async Task HandleBlockedUserAsync(User user, CancellationToken cancellationToken)
+	{
+		_logger.LogInformation("User {UserId} (TelegramId: {TelegramId}, Username: {Username}) blocked the bot. Removing user from database.", user.Id, user.TelegramId, user.Username);
+		_userRepository.Remove(user);
+		await _userRepository.SaveChangesAsync(cancellationToken);
+	}
+
 	public async Task InitializeSchedulerAsync()
 	{
 		_logger.LogInformation("Starting Hangfire job scheduler...");
@@ -88,14 +95,25 @@ public class HangfireSchedulerService
 		{
 			if (user.WordOfTheDayEnabled)
 			{
-				await _botClient.SendMessage(user.TelegramId,
-					$"<b>Word of the Day</b>\n\n" +
-					$"<b>Word:</b> {word.Word}\n" +
-					$"<b>Romaji:</b> {word.Romaji}\n" +
-					$"<b>Meaning:</b> {word.Meaning}\n" +
-					$"<b>Furigana:</b> {word.Furigana}",
-					parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-					cancellationToken: none);
+				try
+				{
+					await _botClient.SendMessage(user.TelegramId,
+						$"<b>Word of the Day</b>\n\n" +
+						$"<b>Word:</b> {word.Word}\n" +
+						$"<b>Romaji:</b> {word.Romaji}\n" +
+						$"<b>Meaning:</b> {word.Meaning}\n" +
+						$"<b>Furigana:</b> {word.Furigana}",
+						parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+						cancellationToken: none);
+				}
+				catch (ApiRequestException ex) when (ex.ErrorCode == 403 && ex.Message.Contains("bot was blocked by the user"))
+				{
+					await HandleBlockedUserAsync(user, none);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "Failed to send word of the day to user {UserId}", user.Id);
+				}
 			}
 		}
 	}
@@ -196,6 +214,11 @@ public class HangfireSchedulerService
 					"You've reached the time limit. The correct answer was " + question.CorrectAnswer,
 					replyParameters: question.MessageId, cancellationToken: cancellationToken);
 				}
+				catch (ApiRequestException ex) when (ex.ErrorCode == 403 && ex.Message.Contains("bot was blocked by the user"))
+				{
+					await HandleBlockedUserAsync(user, cancellationToken);
+					continue; // Skip to next question since user is now deleted
+				}
 				catch (ApiRequestException ex) when (ex.Message.Contains("message to be replied not found"))
 				{
 					_logger.LogError(ex, "Failed to send message to user {UserId}: Message to be replied not found", user.Id);
@@ -231,6 +254,11 @@ public class HangfireSchedulerService
 					await _botClient.SendMessage(user.TelegramId,
 						"You didn't confirm the challenge in time. Your streak has been reset",
 						replyParameters: question.MessageId, cancellationToken: cancellationToken);
+				}
+				catch (ApiRequestException ex) when (ex.ErrorCode == 403 && ex.Message.Contains("bot was blocked by the user"))
+				{
+					await HandleBlockedUserAsync(user, cancellationToken);
+					continue; // Skip to next question since user is now deleted
 				}
 				catch (ApiRequestException ex) when (ex.Message.Contains("message to be replied not found"))
 				{
