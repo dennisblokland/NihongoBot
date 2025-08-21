@@ -45,7 +45,7 @@ public class HangfireSchedulerService
 
 	private async Task HandleBlockedUserAsync(User user, CancellationToken cancellationToken)
 	{
-		_logger.LogInformation("User {UserId} (TelegramId: {TelegramId}) blocked the bot. Removing user from database.", user.Id, user.TelegramId);
+		_logger.LogInformation("User {UserId} (TelegramId: {TelegramId}, Username: {Username}) blocked the bot. Removing user from database.", user.Id, user.TelegramId, user.Username);
 		_userRepository.Remove(user);
 		await _userRepository.SaveChangesAsync(cancellationToken);
 	}
