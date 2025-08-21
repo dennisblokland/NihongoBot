@@ -1,0 +1,24 @@
+@page "/Account/Logout"
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject ILogger<Logout> Logger
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpContext?.User?.Identity?.IsAuthenticated == true)
+        {
+            await SignInManager.SignOutAsync();
+            Logger.LogInformation("User logged out.");
+        }
+    }
+}
+
+<PageTitle>Log out</PageTitle>
+
+<h1>Log out</h1>
+
+<p>You have successfully logged out of the application.</p>

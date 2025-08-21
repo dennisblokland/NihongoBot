@@ -1,9 +1,10 @@
 using Hangfire;
 using Hangfire.Dashboard.BasicAuthorization;
-
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 using NihongoBot.Application.Services;
+using NihongoBot.Application.Services.Admin;
 using NihongoBot.Persistence;
 using NihongoBot.Infrastructure.Extentions;
 
@@ -18,6 +19,39 @@ builder.Configuration
 			.Build();
 
 builder.Services.AddInfrastructureServices();
+
+// Add Blazor Server
+builder.Services.AddRazorPages();
+builder.Services.AddServerSideBlazor();
+
+// Add ASP.NET Core Identity
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+{
+	options.Password.RequireDigit = true;
+	options.Password.RequiredLength = 6;
+	options.Password.RequireNonAlphanumeric = false;
+	options.Password.RequireUppercase = false;
+	options.Password.RequireLowercase = false;
+	options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
+
+// Configure application cookies
+builder.Services.ConfigureApplicationCookie(options =>
+{
+	options.LoginPath = "/Account/Login";
+	options.LogoutPath = "/Account/Logout";
+	options.AccessDeniedPath = "/Account/AccessDenied";
+	options.ExpireTimeSpan = TimeSpan.FromHours(24);
+	options.SlidingExpiration = true;
+});
+
+// Add admin services
+builder.Services.AddScoped<AdminUserService>();
+builder.Services.AddScoped<TelegramUserService>();
+builder.Services.AddScoped<ActivityLogService>();
+builder.Services.AddScoped<SystemMonitoringService>();
 
 builder.Services.AddHangfireServer(options => options.ServerName = "Hangfire Server");
 
@@ -34,7 +68,26 @@ using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope
 
 WebApplication app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+// Configure pipeline
+if (!app.Environment.IsDevelopment())
+{
+	app.UseExceptionHandler("/Error");
+	app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapRazorPages();
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
+
+app.MapGet("/", () => Results.Redirect("/admin"));
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
@@ -56,4 +109,5 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 		}),
 	],
 });
+
 app.Run();

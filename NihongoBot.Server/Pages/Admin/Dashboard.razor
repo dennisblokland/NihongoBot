@@ -1,0 +1,195 @@
+@page "/admin"
+@attribute [Authorize]
+@inject SystemMonitoringService SystemMonitoringService
+@inject TelegramUserService TelegramUserService
+
+<PageTitle>Admin Dashboard</PageTitle>
+
+<h1>NihongoBot Admin Dashboard</h1>
+
+@if (systemHealth == null || userStats == null)
+{
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <!-- System Health Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">System Status</h5>
+                    <h2 class="text-@(systemHealth.Status == "Healthy" ? "success" : "warning")">
+                        @systemHealth.Status
+                    </h2>
+                    <small class="text-muted">Uptime: @FormatUptime(systemHealth.Uptime)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Users</h5>
+                    <h2 class="text-primary">@systemHealth.TotalTelegramUsers</h2>
+                    <small class="text-muted">Active: @systemHealth.ActiveTelegramUsers</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Average Streak</h5>
+                    <h2 class="text-info">@userStats.AverageStreak.ToString("F1")</h2>
+                    <small class="text-muted">Highest: @userStats.HighestStreak</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Activity</h5>
+                    <h2 class="text-success">@systemHealth.RecentActivityCount</h2>
+                    <small class="text-muted">
+                        @if (systemHealth.LastActivity.HasValue)
+                        {
+                            @($"Last: {systemHealth.LastActivity.Value:HH:mm}")
+                        }
+                        else
+                        {
+                            @("No recent activity")
+                        }
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Errors -->
+    @if (systemHealth.RecentErrors.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recent Errors</h5>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var error in systemHealth.RecentErrors.Take(5))
+                        {
+                            <div class="alert alert-warning d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>@error.Type</strong>
+                                    <p class="mb-1">@error.Message</p>
+                                    <small>@error.EntityType - @error.EntityId</small>
+                                </div>
+                                <small>@error.Timestamp.ToString("MM/dd HH:mm")</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Top Users -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Top Users by Streak</h5>
+                </div>
+                <div class="card-body">
+                    @if (userStats.TopUsers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Streak</th>
+                                        <th>Questions/Day</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in userStats.TopUsers)
+                                    {
+                                        <tr>
+                                            <td>@(user.Username ?? "Unknown")</td>
+                                            <td><span class="badge bg-primary">@user.Streak</span></td>
+                                            <td>@user.QuestionsPerDay</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No users found.</p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/admin/telegram-users" class="btn btn-outline-primary">
+                            <i class="bi bi-telegram"></i> Manage Telegram Users
+                        </a>
+                        <a href="/admin/admin-users" class="btn btn-outline-secondary">
+                            <i class="bi bi-people-fill"></i> Manage Admin Users
+                        </a>
+                        <a href="/admin/activity-logs" class="btn btn-outline-info">
+                            <i class="bi bi-list-ul"></i> View Activity Logs
+                        </a>
+                        <a href="/hangfire" target="_blank" class="btn btn-outline-success">
+                            <i class="bi bi-gear-fill"></i> Hangfire Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private SystemHealth? systemHealth;
+    private UserStatistics? userStats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            systemHealth = await SystemMonitoringService.GetSystemHealthAsync();
+            userStats = await TelegramUserService.GetStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle error - could log it or show an error message
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+    }
+
+    private string FormatUptime(TimeSpan uptime)
+    {
+        if (uptime.TotalDays >= 1)
+            return $"{uptime.Days}d {uptime.Hours}h";
+        else if (uptime.TotalHours >= 1)
+            return $"{uptime.Hours}h {uptime.Minutes}m";
+        else
+            return $"{uptime.Minutes}m";
+    }
+}
