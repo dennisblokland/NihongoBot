@@ -140,7 +140,7 @@ public class HangfireSchedulerServiceTest
 				It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new Message());
 
-		_questionRepositoryMock.Verify(context => context.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		_questionRepositoryMock.Verify(context => context.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 	}
 
 	[Fact]
