@@ -25,6 +25,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{73E08DA3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NihongoBot.Application.Tests", "Tests\NihongoBot.Application.Tests\NihongoBot.Application.Tests.csproj", "{A858E43F-1987-44D3-9BD8-13A74055791E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NihongoBot.Domain.Tests", "Tests\NihongoBot.Domain.Tests\NihongoBot.Domain.Tests.csproj", "{B858E43F-1987-44D3-9BD8-13A74055791F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NihongoBot.Server.Tests", "Tests\NihongoBot.Server.Tests\NihongoBot.Server.Tests.csproj", "{C858E43F-1987-44D3-9BD8-13A74055791G}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -155,12 +159,38 @@ Global
 		{A858E43F-1987-44D3-9BD8-13A74055791E}.Release|x64.Build.0 = Release|Any CPU
 		{A858E43F-1987-44D3-9BD8-13A74055791E}.Release|x86.ActiveCfg = Release|Any CPU
 		{A858E43F-1987-44D3-9BD8-13A74055791E}.Release|x86.Build.0 = Release|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Debug|x64.Build.0 = Debug|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Debug|x86.Build.0 = Debug|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Release|x64.ActiveCfg = Release|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Release|x64.Build.0 = Release|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Release|x86.ActiveCfg = Release|Any CPU
+		{B858E43F-1987-44D3-9BD8-13A74055791F}.Release|x86.Build.0 = Release|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Debug|x64.Build.0 = Debug|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Debug|x86.Build.0 = Debug|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Release|x64.ActiveCfg = Release|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Release|x64.Build.0 = Release|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Release|x86.ActiveCfg = Release|Any CPU
+		{C858E43F-1987-44D3-9BD8-13A74055791G}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A858E43F-1987-44D3-9BD8-13A74055791E} = {73E08DA3-1D56-4BFC-87D4-AD5028A1BB7B}
+		{B858E43F-1987-44D3-9BD8-13A74055791F} = {73E08DA3-1D56-4BFC-87D4-AD5028A1BB7B}
+		{C858E43F-1987-44D3-9BD8-13A74055791G} = {73E08DA3-1D56-4BFC-87D4-AD5028A1BB7B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CE49B788-8D18-41F9-BF9E-6A5CF15F322F}

@@ -36,6 +36,7 @@
 					<th>Streak</th>
 					<th>Questions/Day</th>
 					<th>Word of Day</th>
+					<th>Timezone</th>
 					<th>Created</th>
 					<th>Last Updated</th>
 					<th>Actions</th>
@@ -72,9 +73,15 @@
 								<span class="badge bg-secondary">Disabled</span>
 							}
 						</td>
+						<td>
+							<span class="text-muted">@user.TimeZone</span>
+						</td>
 						<td>@user.CreatedAt?.ToString("MMM dd, yyyy")</td>
 						<td>@user.UpdatedAt?.ToString("MMM dd, yyyy")</td>
 						<td>
+							<button class="btn btn-outline-primary btn-sm me-1" @onclick="() => ShowEditModal(user)">
+								<i class="fas fa-edit"></i> Edit
+							</button>
 							<button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmDelete(user)">
 								<i class="fas fa-trash"></i> Delete
 							</button>
@@ -137,15 +144,109 @@ else
 	</div>
 </div>
 
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				@if (editingUser != null)
+				{
+					<form>
+						<div class="mb-3">
+							<label class="form-label">User</label>
+							<p class="form-control-plaintext">
+								<strong>@(!string.IsNullOrEmpty(editingUser.Username) ? editingUser.Username : $"Telegram ID {editingUser.TelegramId}")</strong>
+							</p>
+						</div>
+						<div class="mb-3">
+							<label for="timezoneSelect" class="form-label">Timezone</label>
+							<input type="text" class="form-control" id="timezoneSelect" placeholder="Search and select a timezone..." 
+								   @bind="selectedTimeZone" @oninput="OnTimezoneInput" @onfocus="ShowTimezoneDropdown" @onblur="HideTimezoneDropdown" autocomplete="off" />
+							<div id="timezoneDropdown" class="dropdown-menu position-absolute w-100" style="max-height: 200px; overflow-y: auto; display: @(showTimezoneDropdown ? "block" : "none"); z-index: 1050;">
+								@if (filteredTimezones.Any())
+								{
+									@foreach (var tz in filteredTimezones.Take(20))
+									{
+										<a class="dropdown-item" href="#" @onclick="() => SelectTimezone(tz)" @onmousedown="PreventBlur">@tz</a>
+									}
+								}
+								else if (!string.IsNullOrEmpty(timezoneFilter))
+								{
+									<div class="dropdown-item-text text-muted">No timezones found</div>
+								}
+							</div>
+							@if (!string.IsNullOrEmpty(timezoneError))
+							{
+								<div class="text-danger mt-1">@timezoneError</div>
+							}
+						</div>
+					</form>
+				}
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" @onclick="SaveUser" disabled="@(string.IsNullOrEmpty(selectedTimeZone) || isSaving)">>
+					@if (isSaving)
+					{
+						<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+					}
+					Save Changes
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 @code {
 	private List<TelegramUserDto> users = new();
 	private List<TelegramUserDto> filteredUsers = new();
 	private string searchTerm = string.Empty;
 	private int pageSize = 20;
+	
+	// Edit modal state
+	private TelegramUserDto? editingUser;
+	private string selectedTimeZone = string.Empty;
+	private string timezoneError = string.Empty;
+	private bool isSaving = false;
+	
+	// Timezone search functionality
+	private List<string> allTimezones = new();
+	private List<string> filteredTimezones = new();
+	private string timezoneFilter = string.Empty;
+	private bool showTimezoneDropdown = false;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadUsers();
+		await LoadTimezones();
+	}
+
+	private async Task LoadTimezones()
+	{
+		try
+		{
+			// Use JavaScript to get all supported timezones
+			var timezonesArray = await JSRuntime.InvokeAsync<string[]>("eval", "Intl.supportedValuesOf('timeZone')");
+			allTimezones = timezonesArray.ToList();
+			filteredTimezones = allTimezones.Take(20).ToList(); // Show first 20 by default
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error loading timezones: {ex.Message}");
+			// Fallback to some common timezones if JavaScript fails
+			allTimezones = new List<string>
+			{
+				"UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+				"Europe/London", "Europe/Berlin", "Europe/Paris", "Europe/Amsterdam",
+				"Asia/Tokyo", "Asia/Shanghai", "Asia/Seoul", "Asia/Kolkata",
+				"Australia/Sydney", "Australia/Melbourne"
+			};
+			filteredTimezones = allTimezones.ToList();
+		}
 	}
 
 	private async Task LoadUsers()
@@ -217,5 +318,124 @@ else
 		{
 			Console.WriteLine($"Error deleting user: {ex.Message}");
 		}
+	}
+
+	private async Task ShowEditModal(TelegramUserDto user)
+	{
+		editingUser = user;
+		selectedTimeZone = user.TimeZone;
+		timezoneFilter = user.TimeZone;
+		timezoneError = string.Empty;
+		FilterTimezones(); // Update filtered timezones based on current value
+		
+		await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('editUserModal')).show()");
+	}
+
+	private async Task SaveUser()
+	{
+		if (editingUser == null || string.IsNullOrEmpty(selectedTimeZone))
+			return;
+
+		isSaving = true;
+		timezoneError = string.Empty;
+
+		try
+		{
+			var request = new UpdateTelegramUserRequest
+			{
+				TimeZone = selectedTimeZone
+			};
+
+			var response = await Http.PutAsJsonAsync($"/api/telegramusers/{editingUser.Id}", request);
+			
+			if (response.IsSuccessStatusCode)
+			{
+				await LoadUsers(); // Refresh the user list
+				await JSRuntime.InvokeVoidAsync("eval", "bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide()");
+			}
+			else
+			{
+				var errorContent = await response.Content.ReadAsStringAsync();
+				timezoneError = $"Failed to update user: {errorContent}";
+			}
+		}
+		catch (Exception ex)
+		{
+			timezoneError = $"Error updating user: {ex.Message}";
+		}
+		finally
+		{
+			isSaving = false;
+		}
+	}
+
+	private void OnTimezoneInput(ChangeEventArgs e)
+	{
+		selectedTimeZone = e.Value?.ToString() ?? string.Empty;
+		timezoneFilter = selectedTimeZone;
+		FilterTimezones();
+		showTimezoneDropdown = true;
+		StateHasChanged();
+	}
+
+	private void FilterTimezones()
+	{
+		if (string.IsNullOrEmpty(timezoneFilter))
+		{
+			filteredTimezones = allTimezones.Take(20).ToList();
+		}
+		else
+		{
+			filteredTimezones = allTimezones
+				.Where(tz => tz.Contains(timezoneFilter, StringComparison.OrdinalIgnoreCase))
+				.Take(20)
+				.ToList();
+		}
+	}
+
+	private void ShowTimezoneDropdown()
+	{
+		showTimezoneDropdown = true;
+		StateHasChanged();
+		// Use JavaScript to show the dropdown
+		_ = Task.Run(async () =>
+		{
+			await Task.Delay(100); // Small delay to ensure DOM is updated
+			await JSRuntime.InvokeVoidAsync("eval", @"
+				const dropdown = document.getElementById('timezoneDropdown');
+				if (dropdown) dropdown.style.display = 'block';
+			");
+		});
+	}
+
+	private void HideTimezoneDropdown()
+	{
+		_ = Task.Run(async () =>
+		{
+			await Task.Delay(200); // Delay to allow click events to fire first
+			await JSRuntime.InvokeVoidAsync("eval", @"
+				const dropdown = document.getElementById('timezoneDropdown');
+				if (dropdown) dropdown.style.display = 'none';
+			");
+			showTimezoneDropdown = false;
+			StateHasChanged();
+		});
+	}
+
+	private void SelectTimezone(string timezone)
+	{
+		selectedTimeZone = timezone;
+		timezoneFilter = timezone;
+		showTimezoneDropdown = false;
+		StateHasChanged();
+		_ = JSRuntime.InvokeVoidAsync("eval", @"
+			const dropdown = document.getElementById('timezoneDropdown');
+			if (dropdown) dropdown.style.display = 'none';
+		");
+	}
+
+	private void PreventBlur(Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+	{
+		// This prevents the onblur event from firing when clicking on dropdown items
 	}
 }

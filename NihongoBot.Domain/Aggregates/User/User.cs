@@ -38,5 +38,10 @@ namespace NihongoBot.Domain
 		{
 			WordOfTheDayEnabled = enabled;
 		}
+
+		public void UpdateTimeZone(TimeZoneInfo timeZone)
+		{
+			TimeZone = timeZone ?? throw new ArgumentNullException(nameof(timeZone));
+		}
 	}
 }
