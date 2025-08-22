@@ -139,3 +139,8 @@ NihongoBot.AppHost/manifest.json
 NihongoBot.AppHost/aspirate-output
 NihongoBot.AppHost/aspirate-output/docker-compose.yaml
 **/copilot-instructions.md
+
+# Ignore local configuration files
+**appsettings.Development.json
+**local.settings.json
+
