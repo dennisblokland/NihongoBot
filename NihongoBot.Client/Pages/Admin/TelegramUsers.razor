@@ -149,7 +149,7 @@ else
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="editUserModalLabel">Edit User Timezone</h5>
+				<h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
@@ -164,13 +164,21 @@ else
 						</div>
 						<div class="mb-3">
 							<label for="timezoneSelect" class="form-label">Timezone</label>
-							<select class="form-select" id="timezoneSelect" @bind="selectedTimeZone">
-								<option value="">Select a timezone...</option>
-								@foreach (var tz in commonTimeZones)
+							<input type="text" class="form-control" id="timezoneSelect" placeholder="Search and select a timezone..." 
+								   @bind="selectedTimeZone" @oninput="OnTimezoneInput" @onfocus="ShowTimezoneDropdown" @onblur="HideTimezoneDropdown" autocomplete="off" />
+							<div id="timezoneDropdown" class="dropdown-menu position-absolute w-100" style="max-height: 200px; overflow-y: auto; display: @(showTimezoneDropdown ? "block" : "none"); z-index: 1050;">
+								@if (filteredTimezones.Any())
 								{
-									<option value="@tz.Key">@tz.Value</option>
+									@foreach (var tz in filteredTimezones.Take(20))
+									{
+										<a class="dropdown-item" href="#" @onclick="() => SelectTimezone(tz)" @onmousedown="PreventBlur">@tz</a>
+									}
 								}
-							</select>
+								else if (!string.IsNullOrEmpty(timezoneFilter))
+								{
+									<div class="dropdown-item-text text-muted">No timezones found</div>
+								}
+							</div>
 							@if (!string.IsNullOrEmpty(timezoneError))
 							{
 								<div class="text-danger mt-1">@timezoneError</div>
@@ -181,7 +189,7 @@ else
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" @onclick="SaveTimezone" disabled="@(string.IsNullOrEmpty(selectedTimeZone) || isSaving)">
+				<button type="button" class="btn btn-primary" @onclick="SaveUser" disabled="@(string.IsNullOrEmpty(selectedTimeZone) || isSaving)">>
 					@if (isSaving)
 					{
 						<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -205,29 +213,40 @@ else
 	private string timezoneError = string.Empty;
 	private bool isSaving = false;
 	
-	// Common timezones for dropdown
-	private readonly Dictionary<string, string> commonTimeZones = new()
-	{
-		{ "UTC", "UTC (Coordinated Universal Time)" },
-		{ "America/New_York", "Eastern Time (New York)" },
-		{ "America/Chicago", "Central Time (Chicago)" },
-		{ "America/Denver", "Mountain Time (Denver)" },
-		{ "America/Los_Angeles", "Pacific Time (Los Angeles)" },
-		{ "Europe/London", "London (GMT/BST)" },
-		{ "Europe/Berlin", "Berlin (CET/CEST)" },
-		{ "Europe/Paris", "Paris (CET/CEST)" },
-		{ "Europe/Amsterdam", "Amsterdam (CET/CEST)" },
-		{ "Asia/Tokyo", "Tokyo (JST)" },
-		{ "Asia/Shanghai", "Shanghai (CST)" },
-		{ "Asia/Seoul", "Seoul (KST)" },
-		{ "Asia/Kolkata", "India (IST)" },
-		{ "Australia/Sydney", "Sydney (AEDT/AEST)" },
-		{ "Australia/Melbourne", "Melbourne (AEDT/AEST)" },
-	};
+	// Timezone search functionality
+	private List<string> allTimezones = new();
+	private List<string> filteredTimezones = new();
+	private string timezoneFilter = string.Empty;
+	private bool showTimezoneDropdown = false;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadUsers();
+		await LoadTimezones();
+	}
+
+	private async Task LoadTimezones()
+	{
+		try
+		{
+			// Use JavaScript to get all supported timezones
+			var timezonesArray = await JSRuntime.InvokeAsync<string[]>("eval", "Intl.supportedValuesOf('timeZone')");
+			allTimezones = timezonesArray.ToList();
+			filteredTimezones = allTimezones.Take(20).ToList(); // Show first 20 by default
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error loading timezones: {ex.Message}");
+			// Fallback to some common timezones if JavaScript fails
+			allTimezones = new List<string>
+			{
+				"UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+				"Europe/London", "Europe/Berlin", "Europe/Paris", "Europe/Amsterdam",
+				"Asia/Tokyo", "Asia/Shanghai", "Asia/Seoul", "Asia/Kolkata",
+				"Australia/Sydney", "Australia/Melbourne"
+			};
+			filteredTimezones = allTimezones.ToList();
+		}
 	}
 
 	private async Task LoadUsers()
@@ -305,12 +324,14 @@ else
 	{
 		editingUser = user;
 		selectedTimeZone = user.TimeZone;
+		timezoneFilter = user.TimeZone;
 		timezoneError = string.Empty;
+		FilterTimezones(); // Update filtered timezones based on current value
 		
 		await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('editUserModal')).show()");
 	}
 
-	private async Task SaveTimezone()
+	private async Task SaveUser()
 	{
 		if (editingUser == null || string.IsNullOrEmpty(selectedTimeZone))
 			return;
@@ -335,16 +356,86 @@ else
 			else
 			{
 				var errorContent = await response.Content.ReadAsStringAsync();
-				timezoneError = $"Failed to update timezone: {errorContent}";
+				timezoneError = $"Failed to update user: {errorContent}";
 			}
 		}
 		catch (Exception ex)
 		{
-			timezoneError = $"Error updating timezone: {ex.Message}";
+			timezoneError = $"Error updating user: {ex.Message}";
 		}
 		finally
 		{
 			isSaving = false;
 		}
+	}
+
+	private void OnTimezoneInput(ChangeEventArgs e)
+	{
+		selectedTimeZone = e.Value?.ToString() ?? string.Empty;
+		timezoneFilter = selectedTimeZone;
+		FilterTimezones();
+		showTimezoneDropdown = true;
+		StateHasChanged();
+	}
+
+	private void FilterTimezones()
+	{
+		if (string.IsNullOrEmpty(timezoneFilter))
+		{
+			filteredTimezones = allTimezones.Take(20).ToList();
+		}
+		else
+		{
+			filteredTimezones = allTimezones
+				.Where(tz => tz.Contains(timezoneFilter, StringComparison.OrdinalIgnoreCase))
+				.Take(20)
+				.ToList();
+		}
+	}
+
+	private void ShowTimezoneDropdown()
+	{
+		showTimezoneDropdown = true;
+		StateHasChanged();
+		// Use JavaScript to show the dropdown
+		_ = Task.Run(async () =>
+		{
+			await Task.Delay(100); // Small delay to ensure DOM is updated
+			await JSRuntime.InvokeVoidAsync("eval", @"
+				const dropdown = document.getElementById('timezoneDropdown');
+				if (dropdown) dropdown.style.display = 'block';
+			");
+		});
+	}
+
+	private void HideTimezoneDropdown()
+	{
+		_ = Task.Run(async () =>
+		{
+			await Task.Delay(200); // Delay to allow click events to fire first
+			await JSRuntime.InvokeVoidAsync("eval", @"
+				const dropdown = document.getElementById('timezoneDropdown');
+				if (dropdown) dropdown.style.display = 'none';
+			");
+			showTimezoneDropdown = false;
+			StateHasChanged();
+		});
+	}
+
+	private void SelectTimezone(string timezone)
+	{
+		selectedTimeZone = timezone;
+		timezoneFilter = timezone;
+		showTimezoneDropdown = false;
+		StateHasChanged();
+		_ = JSRuntime.InvokeVoidAsync("eval", @"
+			const dropdown = document.getElementById('timezoneDropdown');
+			if (dropdown) dropdown.style.display = 'none';
+		");
+	}
+
+	private void PreventBlur(Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+	{
+		// This prevents the onblur event from firing when clicking on dropdown items
 	}
 }

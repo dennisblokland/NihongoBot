@@ -5,7 +5,7 @@ using NihongoBot.Domain.Interfaces.Repositories;
 using NihongoBot.Server.Controllers;
 using NihongoBot.Shared.Models;
 
-namespace NihongoBot.Application.Tests.Controllers;
+namespace NihongoBot.Server.Tests;
 
 public class TelegramUsersControllerTests
 {

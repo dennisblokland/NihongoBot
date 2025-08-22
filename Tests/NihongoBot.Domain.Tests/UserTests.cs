@@ -1,6 +1,6 @@
 using NihongoBot.Domain;
 
-namespace NihongoBot.Application.Tests.DomainTests;
+namespace NihongoBot.Domain.Tests;
 
 public class UserTests
 {
