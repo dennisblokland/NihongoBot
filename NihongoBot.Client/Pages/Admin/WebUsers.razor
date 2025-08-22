@@ -1,11 +1,8 @@
 @page "/admin/webusers"
 @layout AdminLayout
 @using NihongoBot.Shared.Models
-@using NihongoBot.Client.Services
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
-@inject AuthenticationService AuthService
-@inject NavigationManager Navigation
 
 <div class="d-flex justify-content-between align-items-center mb-4">
 	<h1>Web Admin Users</h1>
@@ -227,13 +224,6 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
-		// Check authentication first
-		if (!await AuthService.IsAuthenticatedAsync())
-		{
-			Navigation.NavigateTo("/admin/login");
-			return;
-		}
-
 		await LoadUsers();
 	}
 

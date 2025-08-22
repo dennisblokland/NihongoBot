@@ -1,6 +1,7 @@
 @page "/admin/login"
 @using NihongoBot.Shared.Models
-@inject HttpClient Http
+@using NihongoBot.Client.Services
+@inject CustomAuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
@@ -70,17 +71,12 @@
 
 		try
 		{
-			var response = await Http.PostAsJsonAsync("/api/auth/login", loginRequest);
-
-			if (response.IsSuccessStatusCode)
-			{
-				Navigation.NavigateTo("/admin");
-			}
-			else
-			{
-				var content = await response.Content.ReadAsStringAsync();
-				errorMessage = content.Contains("Invalid") ? "Invalid username or password" : "Login failed. Please try again.";
-			}
+			await AuthProvider.LoginAsync(loginRequest.Username, loginRequest.Password, loginRequest.RememberMe);
+			Navigation.NavigateTo("/admin");
+		}
+		catch (UnauthorizedAccessException)
+		{
+			errorMessage = "Invalid username or password";
 		}
 		catch (Exception)
 		{

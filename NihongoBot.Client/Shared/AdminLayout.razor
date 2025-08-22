@@ -1,55 +1,63 @@
 @inherits LayoutComponentBase
+@using NihongoBot.Client.Services
+@inject CustomAuthenticationStateProvider AuthProvider
 
-<div class="page">
-	<nav class="top-row ps-3 navbar navbar-expand-lg navbar-dark bg-dark">
-		<div class="container-fluid">
-			<a class="navbar-brand" href="/admin">NihongoBot Admin</a>
-			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
-				<span class="navbar-toggler-icon"></span>
-			</button>
-			<div class="collapse navbar-collapse" id="adminNavbar">
-				<ul class="navbar-nav me-auto">
-					<li class="nav-item">
-						<a class="nav-link" href="/admin">Dashboard</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" href="/admin/webusers">Web Users</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" href="/admin/telegramusers">Telegram Users</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" href="/admin/statistics">Statistics</a>
-					</li>
-				</ul>
-				<ul class="navbar-nav">
-					<li class="nav-item">
-						<button class="btn btn-outline-light" onclick="logout()">Logout</button>
-					</li>
-				</ul>
-			</div>
+<AuthorizeView>
+	<Authorized>
+		<div class="page">
+			<nav class="top-row ps-3 navbar navbar-expand-lg navbar-dark bg-dark">
+				<div class="container-fluid">
+					<a class="navbar-brand" href="/admin">NihongoBot Admin</a>
+					<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
+						<span class="navbar-toggler-icon"></span>
+					</button>
+					<div class="collapse navbar-collapse" id="adminNavbar">
+						<ul class="navbar-nav me-auto">
+							<li class="nav-item">
+								<a class="nav-link" href="/admin">Dashboard</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="/admin/webusers">Web Users</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="/admin/telegramusers">Telegram Users</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="/admin/statistics">Statistics</a>
+							</li>
+						</ul>
+						<ul class="navbar-nav">
+							<li class="nav-item">
+								<span class="navbar-text me-3">Welcome, @context.User.Identity?.Name</span>
+							</li>
+							<li class="nav-item">
+								<button class="btn btn-outline-light" @onclick="LogoutAsync">Logout</button>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</nav>
+
+			<main>
+				<div class="container-fluid p-4">
+					@Body
+				</div>
+			</main>
 		</div>
-	</nav>
-
-	<main>
-		<div class="container-fluid p-4">
-			@Body
-		</div>
-	</main>
-</div>
-
-<script>
-	async function logout() {
-		try {
-			const response = await fetch('/api/auth/logout', {
-				method: 'POST',
-				credentials: 'include'
-			});
-			if (response.ok) {
-				window.location.href = '/admin/login';
-			}
-		} catch (error) {
-			console.error('Logout failed:', error);
+	</Authorized>
+	<NotAuthorized>
+		@{
+			Navigation.NavigateTo("/admin/login");
 		}
+	</NotAuthorized>
+</AuthorizeView>
+
+@code {
+	[Inject] private NavigationManager Navigation { get; set; } = default!;
+
+	private async Task LogoutAsync()
+	{
+		await AuthProvider.LogoutAsync();
+		Navigation.NavigateTo("/admin/login");
 	}
-</script>
+}
