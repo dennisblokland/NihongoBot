@@ -19,6 +19,11 @@ jobs:
           with:
             dotnet-version: 9.0.x
 
+        - name: Install LibMan CLI
+          run: |
+                dotnet tool update -g Microsoft.Web.LibraryManager.Cli || dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+                echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
         - name: Install Aspirate Tool
           run: dotnet tool install -g aspirate --prerelease
 
@@ -29,12 +34,16 @@ jobs:
           env:
               ApplicationOptions.TelegramBotToken: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
+        - name: Restore client libraries (LibMan)
+          working-directory: NihongoBot.Client
+          run: libman restore
+
         - name: Build the Project
           run: dotnet build
 
         - name: Run Tests
           run: dotnet test
-          
+
         - name:  Generate Compose File
           working-directory: NihongoBot.AppHost
           run: aspirate generate --output-format compose --non-interactive --include-dashboard --secret-password ${{ secrets.ASPIRATE_SECRET_PASSWORD }}
