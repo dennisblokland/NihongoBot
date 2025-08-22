@@ -144,3 +144,4 @@ NihongoBot.AppHost/aspirate-output/docker-compose.yaml
 **appsettings.Development.json
 **local.settings.json
 
+NihongoBot.Client/wwwroot/lib/
