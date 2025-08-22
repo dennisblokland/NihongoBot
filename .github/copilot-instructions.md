@@ -30,6 +30,11 @@ This project follows **Clean Architecture** with the following layers:
 - **NihongoBot** - Console application entry point
 - **NihongoBot.AppHost** - Application host for running the bot
 
+### Client Interface
+- **NihongoBot.Client** - Web client interface with admin functionality
+- Uses local assets managed by libman instead of CDN dependencies
+- Bootstrap and Font Awesome assets are served locally for improved reliability
+
 ### Testing
 - **Tests/NihongoBot.Application.Tests** - Unit tests for application layer
 
@@ -206,8 +211,9 @@ public async Task<User?> GetByTelegramIdAsync(long telegramId, CancellationToken
 ### Running the Application
 1. Set up PostgreSQL database
 2. Create `appsettings.Development.json` with bot token
-3. Run from `NihongoBot.AppHost` project
-4. Database migrations apply automatically on startup
+3. Set up client assets with `libman restore` in NihongoBot.Client directory
+4. Run from `NihongoBot.AppHost` project
+5. Database migrations apply automatically on startup
 
 ### Adding New Features
 

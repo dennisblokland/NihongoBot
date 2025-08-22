@@ -37,7 +37,15 @@ NihongoBot is a Telegram bot written in C# to help users learn Hiragana.
     cd NihongoBot.AppHost
     ```
 
-5. Run the application:
+5. Set up client assets (for admin interface):
+    ```sh
+    cd NihongoBot.Client
+    dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+    libman restore
+    cd ..
+    ```
+
+6. Run the application:
     ```sh
     dotnet run
     ```
