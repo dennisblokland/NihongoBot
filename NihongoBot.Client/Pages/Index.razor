@@ -1,4 +1,10 @@
 @page "/"
+@inject NavigationManager Navigation
 
-<h1>Welcome to NihongoBot</h1>
-<p>This is a minimal Blazor WebAssembly page served by NihongoBot.Server.</p>
+@code {
+	protected override void OnInitialized()
+	{
+		// Redirect to admin login page
+		Navigation.NavigateTo("/admin/login");
+	}
+}

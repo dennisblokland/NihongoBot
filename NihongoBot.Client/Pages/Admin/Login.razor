@@ -1,0 +1,90 @@
+@page "/admin/login"
+@using NihongoBot.Shared.Models
+@using NihongoBot.Client.Services
+@inject CustomAuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="container">
+	<div class="row justify-content-center">
+		<div class="col-md-6 col-lg-4">
+			<div class="card mt-5">
+				<div class="card-header text-center">
+					<h3>NihongoBot Admin Login</h3>
+				</div>
+				<div class="card-body">
+					@if (!string.IsNullOrEmpty(errorMessage))
+					{
+						<div class="alert alert-danger" role="alert">
+							@errorMessage
+						</div>
+					}
+
+					<EditForm Model="loginRequest" OnValidSubmit="HandleLogin">
+						<DataAnnotationsValidator />
+						<ValidationSummary class="text-danger" />
+
+						<div class="mb-3">
+							<label for="username" class="form-label">Username</label>
+							<InputText id="username" class="form-control" @bind-Value="loginRequest.Username" />
+							<ValidationMessage For="() => loginRequest.Username" class="text-danger" />
+						</div>
+
+						<div class="mb-3">
+							<label for="password" class="form-label">Password</label>
+							<InputText type="password" id="password" class="form-control" @bind-Value="loginRequest.Password" />
+							<ValidationMessage For="() => loginRequest.Password" class="text-danger" />
+						</div>
+
+						<div class="mb-3 form-check">
+							<InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginRequest.RememberMe" />
+							<label class="form-check-label" for="rememberMe">
+								Remember me
+							</label>
+						</div>
+
+						<div class="d-grid">
+							<button type="submit" class="btn btn-primary" disabled="@isLoading">
+								@if (isLoading)
+								{
+									<span class="spinner-border spinner-border-sm me-2"></span>
+								}
+								Login
+							</button>
+						</div>
+					</EditForm>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	private LoginRequest loginRequest = new();
+	private string errorMessage = string.Empty;
+	private bool isLoading = false;
+
+	private async Task HandleLogin()
+	{
+		isLoading = true;
+		errorMessage = string.Empty;
+
+		try
+		{
+			await AuthProvider.LoginAsync(loginRequest.Username, loginRequest.Password, loginRequest.RememberMe);
+			Navigation.NavigateTo("/admin");
+		}
+		catch (UnauthorizedAccessException)
+		{
+			errorMessage = "Invalid username or password";
+		}
+		catch (Exception)
+		{
+			errorMessage = "An error occurred. Please try again.";
+		}
+		finally
+		{
+			isLoading = false;
+		}
+	}
+}

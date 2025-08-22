@@ -1,0 +1,220 @@
+@page "/admin"
+@layout AdminLayout
+@using NihongoBot.Shared.Models
+@inject HttpClient Http
+
+<h1>Admin Dashboard</h1>
+
+<div class="row">
+	<div class="col-md-6 col-lg-3 mb-4">
+		<div class="card bg-primary text-white">
+			<div class="card-body">
+				<div class="d-flex justify-content-between">
+					<div>
+						<h4 class="card-title">@webUserCount</h4>
+						<p class="card-text">Web Admin Users</p>
+					</div>
+					<div class="align-self-center">
+						<i class="fas fa-users fa-2x"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6 col-lg-3 mb-4">
+		<div class="card bg-success text-white">
+			<div class="card-body">
+				<div class="d-flex justify-content-between">
+					<div>
+						<h4 class="card-title">@telegramUserCount</h4>
+						<p class="card-text">Telegram Users</p>
+					</div>
+					<div class="align-self-center">
+						<i class="fab fa-telegram fa-2x"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6 col-lg-3 mb-4">
+		<div class="card bg-info text-white">
+			<div class="card-body">
+				<div class="d-flex justify-content-between">
+					<div>
+						<h4 class="card-title">@totalUsers</h4>
+						<p class="card-text">Total Users</p>
+					</div>
+					<div class="align-self-center">
+						<i class="fas fa-user-friends fa-2x"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6 col-lg-3 mb-4">
+		<div class="card bg-warning text-white">
+			<div class="card-body">
+				<div class="d-flex justify-content-between">
+					<div>
+						<h4 class="card-title">@DateTime.Now.ToString("MMM dd")</h4>
+						<p class="card-text">System Status: Online</p>
+					</div>
+					<div class="align-self-center">
+						<i class="fas fa-server fa-2x"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header">
+				<h5>Recent Web Users</h5>
+			</div>
+			<div class="card-body">
+				@if (recentWebUsers.Any())
+				{
+					<div class="table-responsive">
+						<table class="table table-sm">
+							<thead>
+								<tr>
+									<th>Username</th>
+									<th>Email</th>
+									<th>Status</th>
+									<th>Created</th>
+								</tr>
+							</thead>
+							<tbody>
+								@foreach (var user in recentWebUsers.Take(5))
+								{
+									<tr>
+										<td>@user.Username</td>
+										<td>@user.Email</td>
+										<td>
+											<span class="badge @(user.IsEnabled ? "bg-success" : "bg-danger")">
+												@(user.IsEnabled ? "Enabled" : "Disabled")
+											</span>
+										</td>
+										<td>@user.CreatedAt?.ToString("MMM dd, yyyy")</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+				else
+				{
+					<p class="text-muted">No web users found.</p>
+				}
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header">
+				<h5>Top Telegram User Streaks</h5>
+			</div>
+			<div class="card-body">
+				@if (topStreakUsers.Any())
+				{
+					<div class="table-responsive">
+						<table class="table table-sm">
+							<thead>
+								<tr>
+									<th>Username</th>
+									<th>Telegram ID</th>
+									<th>Streak</th>
+									<th>Questions/Day</th>
+								</tr>
+							</thead>
+							<tbody>
+								@foreach (var user in topStreakUsers.Take(5))
+								{
+									<tr>
+										<td>@(user.Username ?? "N/A")</td>
+										<td>@user.TelegramId</td>
+										<td>
+											<span class="badge bg-primary">@user.Streak days</span>
+										</td>
+										<td>@user.QuestionsPerDay</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+				else
+				{
+					<p class="text-muted">No telegram users found.</p>
+				}
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	private int webUserCount = 0;
+	private int telegramUserCount = 0;
+	private int totalUsers = 0;
+	private List<WebUserDto> recentWebUsers = new();
+	private List<TelegramUserDto> topStreakUsers = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadDashboardData();
+	}
+
+	private async Task LoadDashboardData()
+	{
+		try
+		{
+			// Load web users
+			var webUsersResponse = await Http.GetAsync("/api/webusers");
+			if (webUsersResponse.IsSuccessStatusCode)
+			{
+				var webUsers = await webUsersResponse.Content.ReadFromJsonAsync<List<WebUserDto>>();
+				if (webUsers != null)
+				{
+					webUserCount = webUsers.Count;
+					recentWebUsers = webUsers.OrderByDescending(u => u.CreatedAt).ToList();
+				}
+			}
+
+			// Load telegram users
+			var telegramUsersResponse = await Http.GetAsync("/api/telegramusers");
+			if (telegramUsersResponse.IsSuccessStatusCode)
+			{
+				var telegramUsers = await telegramUsersResponse.Content.ReadFromJsonAsync<List<TelegramUserDto>>();
+				if (telegramUsers != null)
+				{
+					telegramUserCount = telegramUsers.Count;
+				}
+			}
+
+			// Load top streaks
+			var topStreaksResponse = await Http.GetAsync("/api/telegramusers/top-streaks");
+			if (topStreaksResponse.IsSuccessStatusCode)
+			{
+				var topStreaks = await topStreaksResponse.Content.ReadFromJsonAsync<List<TelegramUserDto>>();
+				if (topStreaks != null)
+				{
+					topStreakUsers = topStreaks;
+				}
+			}
+
+			totalUsers = webUserCount + telegramUserCount;
+		}
+		catch (Exception ex)
+		{
+			// Handle error - could redirect to login if unauthorized
+			Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+		}
+	}
+}

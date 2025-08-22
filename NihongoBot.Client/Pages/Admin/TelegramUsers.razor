@@ -1,0 +1,221 @@
+@page "/admin/telegramusers"
+@layout AdminLayout
+@using NihongoBot.Shared.Models
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+	<h1>Telegram Users</h1>
+	<div class="text-muted">
+		<i class="fas fa-info-circle"></i> Telegram users can only be deleted here. All other management is done via Telegram bot.
+	</div>
+</div>
+
+@if (users.Any())
+{
+	<div class="row mb-3">
+		<div class="col-md-6">
+			<div class="input-group">
+				<span class="input-group-text"><i class="fas fa-search"></i></span>
+				<input type="text" class="form-control" placeholder="Search by username or Telegram ID..." @bind="searchTerm" @oninput="FilterUsers" />
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="d-flex justify-content-end">
+				<span class="text-muted">Showing @filteredUsers.Count of @users.Count users</span>
+			</div>
+		</div>
+	</div>
+
+	<div class="table-responsive">
+		<table class="table table-striped">
+			<thead class="table-dark">
+				<tr>
+					<th>Telegram ID</th>
+					<th>Username</th>
+					<th>Streak</th>
+					<th>Questions/Day</th>
+					<th>Word of Day</th>
+					<th>Created</th>
+					<th>Last Updated</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var user in filteredUsers.Take(pageSize))
+				{
+					<tr>
+						<td>
+							<code>@user.TelegramId</code>
+						</td>
+						<td>
+							@if (!string.IsNullOrEmpty(user.Username))
+							{
+								<span class="fw-bold">@user.Username</span>
+							}
+							else
+							{
+								<span class="text-muted fst-italic">No username</span>
+							}
+						</td>
+						<td>
+							<span class="badge bg-primary">@user.Streak days</span>
+						</td>
+						<td>@user.QuestionsPerDay</td>
+						<td>
+							@if (user.WordOfTheDayEnabled)
+							{
+								<span class="badge bg-success">Enabled</span>
+							}
+							else
+							{
+								<span class="badge bg-secondary">Disabled</span>
+							}
+						</td>
+						<td>@user.CreatedAt?.ToString("MMM dd, yyyy")</td>
+						<td>@user.UpdatedAt?.ToString("MMM dd, yyyy")</td>
+						<td>
+							<button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmDelete(user)">
+								<i class="fas fa-trash"></i> Delete
+							</button>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+
+	@if (filteredUsers.Count > pageSize)
+	{
+		<div class="d-flex justify-content-center mt-3">
+			<button class="btn btn-outline-primary" @onclick="LoadMore">
+				Load More (@(filteredUsers.Count - pageSize) remaining)
+			</button>
+		</div>
+	}
+}
+else
+{
+	<div class="alert alert-info">
+		<i class="fas fa-info-circle"></i> No Telegram users found.
+	</div>
+}
+
+<!-- Statistics Cards -->
+<div class="row mt-4">
+	<div class="col-md-3">
+		<div class="card bg-light">
+			<div class="card-body text-center">
+				<h4>@users.Count</h4>
+				<p class="text-muted mb-0">Total Users</p>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="card bg-light">
+			<div class="card-body text-center">
+				<h4>@(users.Count > 0 ? users.Average(u => u.Streak).ToString("F1") : "0")</h4>
+				<p class="text-muted mb-0">Avg Streak</p>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="card bg-light">
+			<div class="card-body text-center">
+				<h4>@(users.Count > 0 ? users.Max(u => u.Streak) : 0)</h4>
+				<p class="text-muted mb-0">Highest Streak</p>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="card bg-light">
+			<div class="card-body text-center">
+				<h4>@users.Count(u => u.WordOfTheDayEnabled)</h4>
+				<p class="text-muted mb-0">Word of Day Users</p>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	private List<TelegramUserDto> users = new();
+	private List<TelegramUserDto> filteredUsers = new();
+	private string searchTerm = string.Empty;
+	private int pageSize = 20;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadUsers();
+	}
+
+	private async Task LoadUsers()
+	{
+		try
+		{
+			var response = await Http.GetAsync("/api/telegramusers");
+			if (response.IsSuccessStatusCode)
+			{
+				users = await response.Content.ReadFromJsonAsync<List<TelegramUserDto>>() ?? new();
+				filteredUsers = users.OrderByDescending(u => u.CreatedAt).ToList();
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error loading users: {ex.Message}");
+		}
+	}
+
+	private void FilterUsers(ChangeEventArgs e)
+	{
+		searchTerm = e.Value?.ToString() ?? string.Empty;
+		
+		if (string.IsNullOrEmpty(searchTerm))
+		{
+			filteredUsers = users.OrderByDescending(u => u.CreatedAt).ToList();
+		}
+		else
+		{
+			filteredUsers = users
+				.Where(u => 
+					u.TelegramId.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+					(!string.IsNullOrEmpty(u.Username) && u.Username.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+				.OrderByDescending(u => u.CreatedAt)
+				.ToList();
+		}
+		
+		pageSize = 20; // Reset page size when filtering
+	}
+
+	private void LoadMore()
+	{
+		pageSize += 20;
+	}
+
+	private async Task ConfirmDelete(TelegramUserDto user)
+	{
+		var username = !string.IsNullOrEmpty(user.Username) ? user.Username : $"Telegram ID {user.TelegramId}";
+		var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+			$"Are you sure you want to delete user '{username}'? This will permanently remove their data and they will need to restart the bot to use it again.");
+		
+		if (confirmed)
+		{
+			await DeleteUser(user);
+		}
+	}
+
+	private async Task DeleteUser(TelegramUserDto user)
+	{
+		try
+		{
+			var response = await Http.DeleteAsync($"/api/telegramusers/{user.Id}");
+			if (response.IsSuccessStatusCode)
+			{
+				await LoadUsers();
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error deleting user: {ex.Message}");
+		}
+	}
+}

@@ -1,15 +1,21 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 using NihongoBot.Domain.Base;
 using NihongoBot.Domain;
+using NihongoBot.Domain.Aggregates.WebUser;
+using NihongoBot.Persistence.Identity;
 
 namespace NihongoBot.Persistence;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
     public AppDbContext() : base() { }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+	public DbSet<WebUser> WebUsers { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -21,6 +27,7 @@ public class AppDbContext : DbContext
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+         base.OnModelCreating(modelBuilder);
          modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
     }
 

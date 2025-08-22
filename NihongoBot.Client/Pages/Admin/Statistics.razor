@@ -1,0 +1,289 @@
+@page "/admin/statistics"
+@layout AdminLayout
+@using NihongoBot.Shared.Models
+@inject HttpClient Http
+
+<h1>Usage Statistics</h1>
+
+<div class="row">
+	<!-- Overview Cards -->
+	<div class="col-md-12 mb-4">
+		<div class="card">
+			<div class="card-header">
+				<h5>System Overview</h5>
+			</div>
+			<div class="card-body">
+				<div class="row">
+					<div class="col-md-3 text-center">
+						<h3 class="text-primary">@totalUsers</h3>
+						<p class="text-muted">Total Users</p>
+					</div>
+					<div class="col-md-3 text-center">
+						<h3 class="text-success">@webUserCount</h3>
+						<p class="text-muted">Web Admin Users</p>
+					</div>
+					<div class="col-md-3 text-center">
+						<h3 class="text-info">@telegramUserCount</h3>
+						<p class="text-muted">Telegram Users</p>
+					</div>
+					<div class="col-md-3 text-center">
+						<h3 class="text-warning">@DateTime.Now.ToString("MMM yyyy")</h3>
+						<p class="text-muted">Current Period</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<!-- Telegram User Statistics -->
+	<div class="col-md-6 mb-4">
+		<div class="card">
+			<div class="card-header">
+				<h5>Telegram User Activity</h5>
+			</div>
+			<div class="card-body">
+				@if (telegramUsers.Any())
+				{
+					<div class="mb-3">
+						<div class="d-flex justify-content-between">
+							<span>Average Streak:</span>
+							<strong>@telegramUsers.Average(u => u.Streak).ToString("F1") days</strong>
+						</div>
+					</div>
+					<div class="mb-3">
+						<div class="d-flex justify-content-between">
+							<span>Highest Streak:</span>
+							<strong>@telegramUsers.Max(u => u.Streak) days</strong>
+						</div>
+					</div>
+					<div class="mb-3">
+						<div class="d-flex justify-content-between">
+							<span>Total Questions/Day:</span>
+							<strong>@telegramUsers.Sum(u => u.QuestionsPerDay)</strong>
+						</div>
+					</div>
+					<div class="mb-3">
+						<div class="d-flex justify-content-between">
+							<span>Word of Day Enabled:</span>
+							<strong>@telegramUsers.Count(u => u.WordOfTheDayEnabled) (@(telegramUsers.Count > 0 ? (telegramUsers.Count(u => u.WordOfTheDayEnabled) * 100.0 / telegramUsers.Count).ToString("F1") : "0")%)</strong>
+						</div>
+					</div>
+				}
+				else
+				{
+					<p class="text-muted">No Telegram user data available.</p>
+				}
+			</div>
+		</div>
+	</div>
+
+	<!-- Web User Statistics -->
+	<div class="col-md-6 mb-4">
+		<div class="card">
+			<div class="card-header">
+				<h5>Web Admin User Activity</h5>
+			</div>
+			<div class="card-body">
+				@if (webUsers.Any())
+				{
+					<div class="mb-3">
+						<div class="d-flex justify-content-between">
+							<span>Enabled Users:</span>
+							<strong>@webUsers.Count(u => u.IsEnabled) of @webUsers.Count</strong>
+						</div>
+					</div>
+					<div class="mb-3">
+						<div class="d-flex justify-content-between">
+							<span>Recently Active:</span>
+							<strong>@webUsers.Count(u => u.LastLoginAt.HasValue && u.LastLoginAt.Value > DateTime.UtcNow.AddDays(-7))</strong>
+						</div>
+					</div>
+					<div class="mb-3">
+						<div class="d-flex justify-content-between">
+							<span>Never Logged In:</span>
+							<strong>@webUsers.Count(u => !u.LastLoginAt.HasValue)</strong>
+						</div>
+					</div>
+				}
+				else
+				{
+					<p class="text-muted">No web admin user data available.</p>
+				}
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Top Streaks Leaderboard -->
+<div class="row">
+	<div class="col-md-6 mb-4">
+		<div class="card">
+			<div class="card-header">
+				<h5>Top 10 User Streaks</h5>
+			</div>
+			<div class="card-body">
+				@if (topStreakUsers.Any())
+				{
+					<div class="table-responsive">
+						<table class="table table-sm">
+							<thead>
+								<tr>
+									<th>Rank</th>
+									<th>Username</th>
+									<th>Streak</th>
+									<th>Questions/Day</th>
+								</tr>
+							</thead>
+							<tbody>
+								@for (int i = 0; i < topStreakUsers.Count; i++)
+								{
+									var user = topStreakUsers[i];
+									<tr>
+										<td>
+											@if (i == 0)
+											{
+												<span class="badge bg-warning">🥇 @(i + 1)</span>
+											}
+											else if (i == 1)
+											{
+												<span class="badge bg-secondary">🥈 @(i + 1)</span>
+											}
+											else if (i == 2)
+											{
+												<span class="badge bg-dark">🥉 @(i + 1)</span>
+											}
+											else
+											{
+												<span class="badge bg-light text-dark">@(i + 1)</span>
+											}
+										</td>
+										<td>@(user.Username ?? $"User {user.TelegramId}")</td>
+										<td>
+											<span class="badge bg-primary">@user.Streak days</span>
+										</td>
+										<td>@user.QuestionsPerDay</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+				else
+				{
+					<p class="text-muted">No streak data available.</p>
+				}
+			</div>
+		</div>
+	</div>
+
+	<!-- Recent Activity -->
+	<div class="col-md-6 mb-4">
+		<div class="card">
+			<div class="card-header">
+				<h5>Recent User Activity</h5>
+			</div>
+			<div class="card-body">
+				<div class="mb-3">
+					<h6>Recently Created Telegram Users</h6>
+					@if (recentTelegramUsers.Any())
+					{
+						<ul class="list-unstyled">
+							@foreach (var user in recentTelegramUsers.Take(5))
+							{
+								<li class="mb-2">
+									<div class="d-flex justify-content-between">
+										<span>@(user.Username ?? $"Telegram {user.TelegramId}")</span>
+										<small class="text-muted">@user.CreatedAt?.ToString("MMM dd")</small>
+									</div>
+									<small class="text-muted">Streak: @user.Streak days</small>
+								</li>
+							}
+						</ul>
+					}
+					else
+					{
+						<p class="text-muted small">No recent Telegram users.</p>
+					}
+				</div>
+
+				<div>
+					<h6>Recently Created Web Users</h6>
+					@if (recentWebUsers.Any())
+					{
+						<ul class="list-unstyled">
+							@foreach (var user in recentWebUsers.Take(5))
+							{
+								<li class="mb-2">
+									<div class="d-flex justify-content-between">
+										<span>@user.Username</span>
+										<small class="text-muted">@user.CreatedAt?.ToString("MMM dd")</small>
+									</div>
+									<small class="text-muted">@user.Email</small>
+								</li>
+							}
+						</ul>
+					}
+					else
+					{
+						<p class="text-muted small">No recent web users.</p>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	private int totalUsers = 0;
+	private int webUserCount = 0;
+	private int telegramUserCount = 0;
+	private List<WebUserDto> webUsers = new();
+	private List<TelegramUserDto> telegramUsers = new();
+	private List<TelegramUserDto> topStreakUsers = new();
+	private List<TelegramUserDto> recentTelegramUsers = new();
+	private List<WebUserDto> recentWebUsers = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadStatistics();
+	}
+
+	private async Task LoadStatistics()
+	{
+		try
+		{
+			// Load web users
+			var webUsersResponse = await Http.GetAsync("/api/webusers");
+			if (webUsersResponse.IsSuccessStatusCode)
+			{
+				webUsers = await webUsersResponse.Content.ReadFromJsonAsync<List<WebUserDto>>() ?? new();
+				webUserCount = webUsers.Count;
+				recentWebUsers = webUsers.OrderByDescending(u => u.CreatedAt).ToList();
+			}
+
+			// Load telegram users
+			var telegramUsersResponse = await Http.GetAsync("/api/telegramusers");
+			if (telegramUsersResponse.IsSuccessStatusCode)
+			{
+				telegramUsers = await telegramUsersResponse.Content.ReadFromJsonAsync<List<TelegramUserDto>>() ?? new();
+				telegramUserCount = telegramUsers.Count;
+				recentTelegramUsers = telegramUsers.OrderByDescending(u => u.CreatedAt).ToList();
+			}
+
+			// Load top streaks
+			var topStreaksResponse = await Http.GetAsync("/api/telegramusers/top-streaks");
+			if (topStreaksResponse.IsSuccessStatusCode)
+			{
+				topStreakUsers = await topStreaksResponse.Content.ReadFromJsonAsync<List<TelegramUserDto>>() ?? new();
+			}
+
+			totalUsers = webUserCount + telegramUserCount;
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error loading statistics: {ex.Message}");
+		}
+	}
+}
