@@ -52,6 +52,37 @@ public class TelegramUsersController : ControllerBase
 		return NoContent();
 	}
 
+	[HttpPut("{id}")]
+	public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTelegramUserRequest request)
+	{
+		if (!ModelState.IsValid)
+		{
+			return BadRequest(ModelState);
+		}
+
+		User? user = await _userRepository.FindByIdAsync(id);
+		if (user == null)
+		{
+			return NotFound();
+		}
+
+		try
+		{
+			TimeZoneInfo timeZone = TimeZoneInfo.FindSystemTimeZoneById(request.TimeZone);
+			user.UpdateTimeZone(timeZone);
+			await _userRepository.SaveChangesAsync();
+			return Ok(MapToDto(user));
+		}
+		catch (TimeZoneNotFoundException)
+		{
+			return BadRequest("Invalid timezone identifier");
+		}
+		catch (InvalidTimeZoneException)
+		{
+			return BadRequest("Invalid timezone identifier");
+		}
+	}
+
 	[HttpGet("top-streaks")]
 	public async Task<IActionResult> GetTopStreaks()
 	{
@@ -70,6 +101,7 @@ public class TelegramUsersController : ControllerBase
 			Streak = user.Streak,
 			QuestionsPerDay = user.QuestionsPerDay,
 			WordOfTheDayEnabled = user.WordOfTheDayEnabled,
+			TimeZone = user.TimeZone.Id,
 			CreatedAt = user.CreatedAt,
 			UpdatedAt = user.UpdatedAt
 		};
