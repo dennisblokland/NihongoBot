@@ -1,5 +1,4 @@
 using Hangfire;
-using Hangfire.Dashboard.BasicAuthorization;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +8,7 @@ using NihongoBot.Persistence;
 using NihongoBot.Persistence.Identity;
 using NihongoBot.Infrastructure.Extentions;
 using NihongoBot.Shared.Options;
+using NihongoBot.Server.Security;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -73,7 +73,7 @@ using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope
 {
 	AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 	dbContext.Database.Migrate();
-	
+
 	HangfireSchedulerService hangfireSchedulerService = scope.ServiceProvider.GetRequiredService<HangfireSchedulerService>();
 	await hangfireSchedulerService.InitializeSchedulerAsync();
 
@@ -95,25 +95,27 @@ app.MapControllers();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
+// Redirect unauthenticated users hitting /hangfire to the SPA login page
+app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/hangfire"), branch =>
+{
+	branch.Use(async (context, next) =>
+	{
+		bool isAuthenticated = context.User?.Identity?.IsAuthenticated == true;
+		if (!isAuthenticated)
+		{
+			string returnUrl = context.Request.Path + context.Request.QueryString;
+			string redirectUrl = $"/admin/login?returnUrl={Uri.EscapeDataString(returnUrl)}";
+			context.Response.Redirect(redirectUrl);
+			return;
+		}
+
+		await next();
+	});
+});
+
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-	Authorization =
-	[
-		new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
-		{
-			RequireSsl = false,
-			SslRedirect = false,
-			LoginCaseSensitive = false,
-			Users =
-			[
-				new BasicAuthAuthorizationUser
-				{
-					Login = "admin",
-					PasswordClear = "admin",
-				},
-			],
-		}),
-	],
+	Authorization = [new CookieDashboardAuthorizationFilter()],
 });
 
 // SPA fallback to Blazor index.html

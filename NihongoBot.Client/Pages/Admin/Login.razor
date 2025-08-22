@@ -63,6 +63,14 @@
 	private LoginRequest loginRequest = new();
 	private string errorMessage = string.Empty;
 	private bool isLoading = false;
+	protected override async Task OnInitializedAsync()
+	{
+		AuthenticationState state = await AuthProvider.GetAuthenticationStateAsync();
+		if (state.User?.Identity?.IsAuthenticated == true)
+		{
+			Navigation.NavigateTo("/admin");
+		}
+	}
 
 	private async Task HandleLogin()
 	{

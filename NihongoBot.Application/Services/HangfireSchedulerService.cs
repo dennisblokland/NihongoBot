@@ -123,9 +123,9 @@ public class HangfireSchedulerService
 		IEnumerable<User> users = await _userRepository.GetAsync();
 
 		foreach (User user in users)
-			{
-				ScheduleHiraganaJobsForUser(user);
-			}
+		{
+			ScheduleHiraganaJobsForUser(user);
+		}
 	}
 
 	public void ScheduleHiraganaJobsForUser(User user)
@@ -149,7 +149,6 @@ public class HangfireSchedulerService
 			}
 		}
 
-		//TODO: Get the user's timezone from the database
 		//TODO: make the start and end times configurable
 		TimeOnly start = new(9, 0);  // Start time (09:00)
 		TimeOnly end = new(21, 0);   // End time (21:00)
@@ -167,22 +166,30 @@ public class HangfireSchedulerService
 
 			TimeOnly scheduledTime = scheduledTimes[i];
 
-			DateTimeOffset scheduledDateTime = new(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, scheduledTime.Hour, scheduledTime.Minute, 0, 0, TimeSpan.Zero);
+			DateTime userNow = TimeZoneInfo.ConvertTime(DateTime.UtcNow, user.TimeZone);
+			DateTime scheduledDateTimeLocal = new(userNow.Year, userNow.Month, userNow.Day, scheduledTime.Hour, scheduledTime.Minute, 0);
+			DateTimeOffset scheduledDateTime = new(DateTime.SpecifyKind(scheduledDateTimeLocal, DateTimeKind.Unspecified), user.TimeZone.GetUtcOffset(scheduledDateTimeLocal));
 
-			if (scheduledDateTime < DateTimeOffset.Now)
+			if (scheduledDateTime < TimeZoneInfo.ConvertTime(DateTime.UtcNow, user.TimeZone))
 			{
 				scheduledDateTime = scheduledDateTime.AddDays(1);
 			}
 
 			// Randomly choose between SendHiraganaMessage and SendMultipleChoiceHiraganaMessage
 			bool useMultipleChoice = Random.Shared.Next(2) == 0;
+			string cronExpression = Cron.Yearly(scheduledDateTime.Month, scheduledDateTime.Day, scheduledDateTime.Hour, scheduledDateTime.Minute);
+			RecurringJobOptions options = new()
+			{
+				TimeZone = user.TimeZone
+			};
 
 			if (useMultipleChoice)
 			{
 				_recurringJobManager.AddOrUpdate<HiraganaService>(
 					jobId,
 					service => service.SendMultipleChoiceHiraganaMessage(user.TelegramId, user.Id, CancellationToken.None),
-					Cron.Yearly(scheduledDateTime.Month, scheduledDateTime.Day, scheduledDateTime.Hour, scheduledDateTime.Minute)
+					cronExpression,
+					options
 				);
 			}
 			else
@@ -190,7 +197,8 @@ public class HangfireSchedulerService
 				_recurringJobManager.AddOrUpdate<HiraganaService>(
 					jobId,
 					service => service.SendHiraganaMessage(user.TelegramId, user.Id, CancellationToken.None),
-					Cron.Yearly(scheduledDateTime.Month, scheduledDateTime.Day, scheduledDateTime.Hour, scheduledDateTime.Minute)
+					cronExpression,
+					options
 				);
 			}
 		}
@@ -238,7 +246,7 @@ public class HangfireSchedulerService
 			}
 			_questionRepository.Update(question);
 		}
-		
+
 		await _questionRepository.SaveChangesAsync(cancellationToken);
 		IEnumerable<Question> unansweredQuestions = await _questionRepository.GetExpiredPendingAcceptanceQuestionsAsync(cancellationToken);
 
