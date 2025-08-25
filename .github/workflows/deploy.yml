@@ -7,7 +7,7 @@ on:
     workflow_dispatch:
 
 jobs:
-    deploy:
+    build:
         runs-on: self-hosted
 
         steps:
@@ -48,8 +48,28 @@ jobs:
           working-directory: NihongoBot.AppHost
           run: aspirate generate --output-format compose --non-interactive --include-dashboard --secret-password ${{ secrets.ASPIRATE_SECRET_PASSWORD }}
 
+        - name: Upload deployment artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: deployment-artifacts
+            path: |
+              NihongoBot.AppHost/aspirate-output/docker-compose.yaml
+            retention-days: 1
+
+    deploy:
+        needs: build
+        runs-on: self-hosted
+        environment: production
+
+        steps:
+        - name: Download deployment artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: deployment-artifacts
+            path: ./artifacts
+
         - name: Copy Docker Compose File
-          run: cp $GITHUB_WORKSPACE/NihongoBot.AppHost/aspirate-output/docker-compose.yaml /home/dennis/nihongoBot
+          run: cp ./artifacts/NihongoBot.AppHost/aspirate-output/docker-compose.yaml /home/dennis/nihongoBot
 
         - name: Restart NihongoBot Container
           run: |
