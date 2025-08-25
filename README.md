@@ -75,6 +75,14 @@ To apply database migrations, follow these steps:
 
 Register yourself by sending /start to the bot
 
+## Contributing
+
+We welcome contributions to NihongoBot! Please read our [Contributing Guidelines](CONTRIBUTING.md) for information about:
+- Development setup and workflow
+- Code style guidelines  
+- Testing requirements
+- Deployment approval process
+
 ## License
 
 This project is licensed under the GNU GPL V3
