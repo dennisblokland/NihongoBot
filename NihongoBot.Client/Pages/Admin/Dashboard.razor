@@ -2,12 +2,13 @@
 @layout AdminLayout
 @using NihongoBot.Shared.Models
 @inject HttpClient Http
+@inject NavigationManager Navigation
 
 <h1>Admin Dashboard</h1>
 
 <div class="row">
 	<div class="col-md-6 col-lg-3 mb-4">
-		<div class="card bg-primary text-white">
+		<div class="card bg-primary text-white dashboard-card-clickable" @onclick="() => NavigateToWebUsers()">
 			<div class="card-body">
 				<div class="d-flex justify-content-between">
 					<div>
@@ -23,7 +24,7 @@
 	</div>
 
 	<div class="col-md-6 col-lg-3 mb-4">
-		<div class="card bg-success text-white">
+		<div class="card bg-success text-white dashboard-card-clickable" @onclick="() => NavigateToTelegramUsers()">
 			<div class="card-body">
 				<div class="d-flex justify-content-between">
 					<div>
@@ -39,7 +40,7 @@
 	</div>
 
 	<div class="col-md-6 col-lg-3 mb-4">
-		<div class="card bg-info text-white">
+		<div class="card bg-info text-white dashboard-card-clickable" @onclick="() => NavigateToStatistics()">
 			<div class="card-body">
 				<div class="d-flex justify-content-between">
 					<div>
@@ -55,7 +56,7 @@
 	</div>
 
 	<div class="col-md-6 col-lg-3 mb-4">
-		<div class="card bg-warning text-white">
+		<div class="card bg-warning text-white dashboard-card-clickable" @onclick="() => NavigateToStatistics()">
 			<div class="card-body">
 				<div class="d-flex justify-content-between">
 					<div>
@@ -169,6 +170,21 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadDashboardData();
+	}
+
+	private void NavigateToWebUsers()
+	{
+		Navigation.NavigateTo("/admin/webusers");
+	}
+
+	private void NavigateToTelegramUsers()
+	{
+		Navigation.NavigateTo("/admin/telegramusers");
+	}
+
+	private void NavigateToStatistics()
+	{
+		Navigation.NavigateTo("/admin/statistics");
 	}
 
 	private async Task LoadDashboardData()

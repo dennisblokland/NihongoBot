@@ -3,3 +3,19 @@ body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helve
 .navbar { background-color: #222; color: #fff; }
 .navbar .navbar-brand { color: #fff; text-decoration: none; }
 .content { max-width: 960px; margin: 0 auto; }
+
+/* Dashboard card styling for clickable cards */
+.dashboard-card-clickable {
+	cursor: pointer;
+	transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+	user-select: none;
+}
+
+.dashboard-card-clickable:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-card-clickable:active {
+	transform: translateY(-1px);
+}
