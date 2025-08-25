@@ -44,16 +44,16 @@ jobs:
         - name: Run Tests
           run: dotnet test
 
-        - name:  Generate Compose File
-          working-directory: NihongoBot.AppHost
-          run: aspirate generate --output-format compose --non-interactive --include-dashboard --secret-password ${{ secrets.ASPIRATE_SECRET_PASSWORD }}
-
-        - name: Upload deployment artifacts
+        - name: Upload source code for deployment
           uses: actions/upload-artifact@v4
           with:
             name: deployment-artifacts
             path: |
-              NihongoBot.AppHost/aspirate-output/docker-compose.yaml
+              .
+              !.git
+              !Tests
+              !.vscode
+              !*.md
             retention-days: 1
 
     deploy:
@@ -62,14 +62,26 @@ jobs:
         environment: production
 
         steps:
-        - name: Download deployment artifacts
+        - name: Download source code
           uses: actions/download-artifact@v4
           with:
             name: deployment-artifacts
-            path: ./artifacts
+            path: ./deployment
+
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: 9.0.x
+
+        - name: Install Aspirate Tool
+          run: dotnet tool install -g aspirate --prerelease
+
+        - name: Generate Compose File
+          working-directory: ./deployment/NihongoBot.AppHost
+          run: aspirate generate --output-format compose --non-interactive --include-dashboard --secret-password ${{ secrets.ASPIRATE_SECRET_PASSWORD }}
 
         - name: Copy Docker Compose File
-          run: cp ./artifacts/NihongoBot.AppHost/aspirate-output/docker-compose.yaml /home/dennis/nihongoBot
+          run: cp ./deployment/NihongoBot.AppHost/aspirate-output/docker-compose.yaml /home/dennis/nihongoBot
 
         - name: Restart NihongoBot Container
           run: |
