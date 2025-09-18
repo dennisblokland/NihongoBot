@@ -92,24 +92,7 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 		List<string> allCharacters = characterDisplayNames.Keys.ToList();
 
 		// Group characters by category for better organization
-		List<(string Category, List<string> Characters)> characterGroups =
-		[
-			("Basic Vowels", new List<string> { "a", "i", "u", "e", "o" }),
-			("K Sounds", new List<string> { "ka", "ki", "ku", "ke", "ko" }),
-			("S Sounds", new List<string> { "sa", "shi", "su", "se", "so" }),
-			("T Sounds", new List<string> { "ta", "chi", "tsu", "te", "to" }),
-			("N Sounds", new List<string> { "na", "ni", "nu", "ne", "no" }),
-			("H Sounds", new List<string> { "ha", "hi", "fu", "he", "ho" }),
-			("M Sounds", new List<string> { "ma", "mi", "mu", "me", "mo" }),
-			("Y Sounds", new List<string> { "ya", "yu", "yo" }),
-			("R Sounds", new List<string> { "ra", "ri", "ru", "re", "ro" }),
-			("W/N Sounds", new List<string> { "wa", "wo", "n" }),
-			("Combination Sounds", new List<string> { 
-				"kya", "kyu", "kyo", "sha", "shu", "sho", "cha", "chu", "cho",
-				"nya", "nyu", "nyo", "hya", "hyu", "hyo", "mya", "myu", "myo",
-				"rya", "ryu", "ryo"
-			})
-		];
+		List<(string Category, List<string> Characters)> characterGroups = GetCharacterGroups();
 
 		foreach ((string Category, List<string> Characters) group in characterGroups)
 		{
@@ -173,10 +156,31 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 
 	private InlineKeyboardButton CreateCategoryToggleButton(string category, List<string> characters, string value, int messageId, string buttonText)
 	{
-		// Create a special callback for category toggle with the character list
-		string charactersJson = System.Text.Json.JsonSerializer.Serialize(characters);
-		SettingsOptionCallbackData data = new SettingsOptionCallbackData(SettingType.CharacterSelection, $"category:{category}:{value}:{charactersJson}") { MessageId = messageId };
+		// Create a compact callback for category toggle - characters will be looked up server-side
+		SettingsOptionCallbackData data = new SettingsOptionCallbackData(SettingType.CharacterSelection, $"category:{category}:{value}") { MessageId = messageId };
 		return InlineKeyboardButton.WithCallbackData(buttonText, Serialize(data));
+	}
+
+	public static List<(string Category, List<string> Characters)> GetCharacterGroups()
+	{
+		return new List<(string, List<string>)>
+		{
+			("Basic Vowels", new List<string> { "a", "i", "u", "e", "o" }),
+			("K Sounds", new List<string> { "ka", "ki", "ku", "ke", "ko" }),
+			("S Sounds", new List<string> { "sa", "shi", "su", "se", "so" }),
+			("T Sounds", new List<string> { "ta", "chi", "tsu", "te", "to" }),
+			("N Sounds", new List<string> { "na", "ni", "nu", "ne", "no" }),
+			("H Sounds", new List<string> { "ha", "hi", "fu", "he", "ho" }),
+			("M Sounds", new List<string> { "ma", "mi", "mu", "me", "mo" }),
+			("Y Sounds", new List<string> { "ya", "yu", "yo" }),
+			("R Sounds", new List<string> { "ra", "ri", "ru", "re", "ro" }),
+			("W/N Sounds", new List<string> { "wa", "wo", "n" }),
+			("Combination Sounds", new List<string> { 
+				"kya", "kyu", "kyo", "sha", "shu", "sho", "cha", "chu", "cho",
+				"nya", "nyu", "nyo", "hya", "hyu", "hyo", "mya", "myu", "myo",
+				"rya", "ryu", "ryo"
+			})
+		};
 	}
 
 	private static string Serialize(ICallbackData data)

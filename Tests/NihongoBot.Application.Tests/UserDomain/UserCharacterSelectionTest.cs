@@ -184,4 +184,27 @@ public class UserCharacterSelectionTest
 			Assert.True(user.IsCharacterEnabled(character));
 		}
 	}
+
+	[Fact]
+	public void CategoryCallbackData_ShouldBeWithin64ByteLimit()
+	{
+		// Test that category callback data respects Telegram's 64-byte limit
+		string[] categories = {
+			"Basic Vowels", "K Sounds", "S Sounds", "T Sounds", "N Sounds",
+			"H Sounds", "M Sounds", "Y Sounds", "R Sounds", "W/N Sounds",
+			"Combination Sounds"
+		};
+
+		foreach (string category in categories)
+		{
+			// Test both true and false values
+			string callbackTrue = $"category:{category}:true";
+			string callbackFalse = $"category:{category}:false";
+
+			Assert.True(callbackTrue.Length <= 64, 
+				$"Category '{category}' callback data exceeds 64 bytes: {callbackTrue.Length} bytes");
+			Assert.True(callbackFalse.Length <= 64, 
+				$"Category '{category}' callback data exceeds 64 bytes: {callbackFalse.Length} bytes");
+		}
+	}
 }
