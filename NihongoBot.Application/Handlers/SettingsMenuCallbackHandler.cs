@@ -113,10 +113,14 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 
 		foreach (var group in characterGroups)
 		{
-			// Add category header
+			// Add category header that can toggle the whole category
+			bool allCategoryEnabled = group.Characters.All(character => user.IsCharacterEnabled(character));
+			string categoryToggleText = allCategoryEnabled ? $"✅ 📝 {group.Category}" : $"❌ 📝 {group.Category}";
+			string categoryToggleValue = allCategoryEnabled ? "false" : "true";
+			
 			rows.Add(new List<InlineKeyboardButton>
 			{
-				InlineKeyboardButton.WithCallbackData($"📝 {group.Category}", "category_header")
+				CreateCategoryToggleButton(group.Category, group.Characters, categoryToggleValue, messageId, categoryToggleText)
 			});
 
 			// Add characters in this group (2 per row to avoid too wide buttons)
@@ -164,6 +168,14 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 	private InlineKeyboardButton CreateSpecialActionButton(string action, int messageId, string buttonText)
 	{
 		SettingsOptionCallbackData data = new SettingsOptionCallbackData(SettingType.CharacterSelection, $"special:{action}") { MessageId = messageId };
+		return InlineKeyboardButton.WithCallbackData(buttonText, Serialize(data));
+	}
+
+	private InlineKeyboardButton CreateCategoryToggleButton(string category, List<string> characters, string value, int messageId, string buttonText)
+	{
+		// Create a special callback for category toggle with the character list
+		string charactersJson = System.Text.Json.JsonSerializer.Serialize(characters);
+		SettingsOptionCallbackData data = new SettingsOptionCallbackData(SettingType.CharacterSelection, $"category:{category}:{value}:{charactersJson}") { MessageId = messageId };
 		return InlineKeyboardButton.WithCallbackData(buttonText, Serialize(data));
 	}
 

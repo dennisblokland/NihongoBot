@@ -39,9 +39,9 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
                 user.WordOfTheDayEnabled = bool.Parse(callbackData.Value);
                 break;
             case SettingType.CharacterSelection:
-                // Parse character and enabled state from format "character:true/false" or "special:action"
+                // Parse character and enabled state from format "character:true/false", "special:action", or "category:name:true/false:characters_json"
                 string[] parts = callbackData.Value.Split(':');
-                if (parts.Length == 2)
+                if (parts.Length >= 2)
                 {
                     string firstPart = parts[0];
                     string secondPart = parts[1];
@@ -60,7 +60,31 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
                             user.EnabledCharacters = System.Text.Json.JsonSerializer.Serialize(new List<string>());
                         }
                     }
-                    else
+                    else if (firstPart == "category" && parts.Length == 4)
+                    {
+                        // Handle category toggle: "category:categoryName:true/false:charactersJson"
+                        string categoryName = secondPart;
+                        bool enabled = bool.Parse(parts[2]);
+                        string charactersJson = parts[3];
+                        
+                        try
+                        {
+                            List<string>? characters = System.Text.Json.JsonSerializer.Deserialize<List<string>>(charactersJson);
+                            if (characters != null)
+                            {
+                                // Toggle all characters in the category
+                                foreach (string character in characters)
+                                {
+                                    user.UpdateCharacterSelection(character, enabled);
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // If JSON parsing fails, ignore the action
+                        }
+                    }
+                    else if (parts.Length == 2)
                     {
                         // Handle individual character toggle
                         string character = firstPart;

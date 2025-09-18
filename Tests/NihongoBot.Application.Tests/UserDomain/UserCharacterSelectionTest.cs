@@ -152,4 +152,36 @@ public class UserCharacterSelectionTest
 		Assert.Contains("n", displayNames.Keys);
 		Assert.Equal("Ka (か)", displayNames["ka"]);
 	}
+
+	[Fact]
+	public void UpdateCharacterSelection_ShouldHandleCategoryToggle()
+	{
+		// Arrange
+		User user = new User(123456789L, "testuser");
+		List<string> kSounds = new List<string> { "ka", "ki", "ku", "ke", "ko" };
+
+		// Act - Disable all K sounds
+		foreach (string character in kSounds)
+		{
+			user.UpdateCharacterSelection(character, false);
+		}
+
+		// Assert - All K sounds should be disabled
+		foreach (string character in kSounds)
+		{
+			Assert.False(user.IsCharacterEnabled(character));
+		}
+
+		// Act - Re-enable all K sounds
+		foreach (string character in kSounds)
+		{
+			user.UpdateCharacterSelection(character, true);
+		}
+
+		// Assert - All K sounds should be enabled
+		foreach (string character in kSounds)
+		{
+			Assert.True(user.IsCharacterEnabled(character));
+		}
+	}
 }
