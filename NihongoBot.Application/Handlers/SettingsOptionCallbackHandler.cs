@@ -38,6 +38,65 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
             case SettingType.WordOfTheDay:
                 user.WordOfTheDayEnabled = bool.Parse(callbackData.Value);
                 break;
+            case SettingType.CharacterSelection:
+                // Parse character and enabled state from format "character:true/false", "special:action", or "category:name:true/false:characters_json"
+                string[] parts = callbackData.Value.Split(':');
+                if (parts.Length >= 2)
+                {
+                    string firstPart = parts[0];
+                    string secondPart = parts[1];
+                    
+                    if (firstPart == "special")
+                    {
+                        // Handle special actions
+                        if (secondPart == "select_all")
+                        {
+                            // Enable all characters - set EnabledCharacters to null (default)
+                            user.EnabledCharacters = null;
+                        }
+                        else if (secondPart == "deselect_all")
+                        {
+                            // Disable all characters - set to empty list
+                            user.EnabledCharacters = System.Text.Json.JsonSerializer.Serialize(new List<string>());
+                        }
+                    }
+                    else if (firstPart == "category" && parts.Length == 3)
+                    {
+                        // Handle category toggle: "category:categoryName:true/false"
+                        string categoryName = secondPart;
+                        bool enabled = bool.Parse(parts[2]);
+                        
+                        // Lookup characters for this category
+                        List<(string Category, List<string> Characters)> characterGroups = SettingsMenuCallbackHandler.GetCharacterGroups();
+                        var targetGroup = characterGroups.FirstOrDefault(g => g.Category == categoryName);
+                        
+                        if (targetGroup.Characters != null)
+                        {
+                            // Toggle all characters in the category
+                            foreach (string character in targetGroup.Characters)
+                            {
+                                user.UpdateCharacterSelection(character, enabled);
+                            }
+                        }
+                    }
+                    else if (parts.Length == 2)
+                    {
+                        // Handle individual character toggle
+                        string character = firstPart;
+                        bool enabled = bool.Parse(secondPart);
+                        user.UpdateCharacterSelection(character, enabled);
+                    }
+                    
+                    // Save changes and refresh the character selection menu
+                    await _userRepository.SaveChangesAsync(cancellationToken);
+                    
+                    // Redirect back to character selection menu to show updated state
+                    SettingsMenuCallbackData redirectData = new SettingsMenuCallbackData(4) { MessageId = callbackData.MessageId };
+                    SettingsMenuCallbackHandler menuHandler = new SettingsMenuCallbackHandler(_botClient, _userRepository);
+                    await menuHandler.HandleAsync(chatId, redirectData, cancellationToken);
+                    return;
+                }
+                break;
             default:
                 await _botClient.SendMessage(chatId, "Invalid setting.", cancellationToken: cancellationToken);
                 return;

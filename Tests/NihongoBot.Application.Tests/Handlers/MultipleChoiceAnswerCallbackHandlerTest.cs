@@ -32,6 +32,7 @@ public class MultipleChoiceAnswerCallbackHandlerTest
 		_hiraganaService = new HiraganaService(
 			_questionRepositoryMock.Object,
 			_kanaRepositoryMock.Object,
+			_userRepositoryMock.Object,
 			_botClientMock.Object,
 			imageCacheServiceMock.Object,
 			strokeOrderServiceMock.Object,

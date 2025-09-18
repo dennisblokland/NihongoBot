@@ -21,6 +21,7 @@ public class HiraganaServiceTest
 	private readonly Mock<ITelegramBotClient> _botClientMock = new();
 	private readonly Mock<IQuestionRepository> _questionRepositoryMock = new();
 	private readonly Mock<IKanaRepository> _kanaRepositoryMock = new();
+	private readonly Mock<IUserRepository> _userRepositoryMock = new();
 	private readonly Mock<IImageCacheService> _imageCacheServiceMock = new();
 	private readonly Mock<IStrokeOrderService> _strokeOrderServiceMock = new();
 	private readonly Mock<ILogger<HiraganaService>> _loggerMock = new();
@@ -41,6 +42,7 @@ public class HiraganaServiceTest
 		_hiraganaService = new HiraganaService(
 			_questionRepositoryMock.Object,
 			_kanaRepositoryMock.Object,
+			_userRepositoryMock.Object,
 			_botClientMock.Object,
 			_imageCacheServiceMock.Object,
 			_strokeOrderServiceMock.Object,
@@ -62,11 +64,17 @@ public class HiraganaServiceTest
 			Romaji = "a"
 		};
 
+		// Mock user with all characters enabled
+		Domain.User user = new Domain.User(telegramId, "testuser");
+		_userRepositoryMock
+			.Setup(repo => repo.GetByTelegramIdAsync(telegramId, cancellationToken))
+			.ReturnsAsync(user);
+
 		Message message = new();
 		// Note: MessageId is read-only and will be set by the Telegram API.
 
 		_kanaRepositoryMock
-			.Setup(repo => repo.GetRandomAsync(KanaType.Hiragana, cancellationToken))
+			.Setup(repo => repo.GetRandomAsync(KanaType.Hiragana, It.IsAny<List<string>>(), cancellationToken))
 			.ReturnsAsync(kana);
 
         _botClientMock
@@ -105,8 +113,14 @@ public class HiraganaServiceTest
 		Guid userId = Guid.NewGuid();
 		CancellationToken cancellationToken = CancellationToken.None;
 
+		// Mock user with all characters enabled
+		Domain.User user = new Domain.User(telegramId, "testuser");
+		_userRepositoryMock
+			.Setup(repo => repo.GetByTelegramIdAsync(telegramId, cancellationToken))
+			.ReturnsAsync(user);
+
 		_kanaRepositoryMock
-			.Setup(repo => repo.GetRandomAsync(KanaType.Hiragana, cancellationToken))
+			.Setup(repo => repo.GetRandomAsync(KanaType.Hiragana, It.IsAny<List<string>>(), cancellationToken))
 			.ReturnsAsync((Kana?) null);
 
 		// Act
@@ -116,7 +130,7 @@ public class HiraganaServiceTest
 		_loggerMock.Verify(logger => logger.Log(
 			LogLevel.Warning,
 			It.IsAny<EventId>(),
-			It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("No Kana found in the database.")),
+			It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("No Kana found in the database with enabled characters")),
 			null,
 			It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
 
@@ -137,6 +151,12 @@ public class HiraganaServiceTest
 		Guid userId = Guid.NewGuid();
 		CancellationToken cancellationToken = CancellationToken.None;
 
+		// Mock user with all characters enabled
+		Domain.User user = new Domain.User(telegramId, "testuser");
+		_userRepositoryMock
+			.Setup(repo => repo.GetByTelegramIdAsync(telegramId, cancellationToken))
+			.ReturnsAsync(user);
+
 		Kana kana = new()
 		{
 			Character = "つ",
@@ -151,11 +171,11 @@ public class HiraganaServiceTest
 		};
 
 		_kanaRepositoryMock
-			.Setup(repo => repo.GetRandomAsync(KanaType.Hiragana, cancellationToken))
+			.Setup(repo => repo.GetRandomAsync(KanaType.Hiragana, It.IsAny<List<string>>(), cancellationToken))
 			.ReturnsAsync(kana);
 
 		_kanaRepositoryMock
-			.Setup(repo => repo.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, 3, cancellationToken))
+			.Setup(repo => repo.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, It.IsAny<List<string>>(), 3, cancellationToken))
 			.ReturnsAsync(wrongAnswers);
 
 		_botClientMock

@@ -21,6 +21,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(u => u.QuestionsPerDay).HasDefaultValue(2);
 		builder.Property(u => u.WordOfTheDayEnabled).HasDefaultValue(true);
 
+		// Character selection property - null means all characters enabled (default)
+		builder.Property(u => u.EnabledCharacters).IsRequired(false);
+
 		// Converter: TimeZoneInfo <-> IANA string
 		ValueConverter<TimeZoneInfo, string> tzConverter = new(
 			toProvider => ToIanaForStorage(toProvider),
