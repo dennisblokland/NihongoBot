@@ -60,28 +60,23 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
                             user.EnabledCharacters = System.Text.Json.JsonSerializer.Serialize(new List<string>());
                         }
                     }
-                    else if (firstPart == "category" && parts.Length == 4)
+                    else if (firstPart == "category" && parts.Length == 3)
                     {
-                        // Handle category toggle: "category:categoryName:true/false:charactersJson"
+                        // Handle category toggle: "category:categoryName:true/false"
                         string categoryName = secondPart;
                         bool enabled = bool.Parse(parts[2]);
-                        string charactersJson = parts[3];
                         
-                        try
+                        // Lookup characters for this category
+                        List<(string Category, List<string> Characters)> characterGroups = SettingsMenuCallbackHandler.GetCharacterGroups();
+                        var targetGroup = characterGroups.FirstOrDefault(g => g.Category == categoryName);
+                        
+                        if (targetGroup.Characters != null)
                         {
-                            List<string>? characters = System.Text.Json.JsonSerializer.Deserialize<List<string>>(charactersJson);
-                            if (characters != null)
+                            // Toggle all characters in the category
+                            foreach (string character in targetGroup.Characters)
                             {
-                                // Toggle all characters in the category
-                                foreach (string character in characters)
-                                {
-                                    user.UpdateCharacterSelection(character, enabled);
-                                }
+                                user.UpdateCharacterSelection(character, enabled);
                             }
-                        }
-                        catch
-                        {
-                            // If JSON parsing fails, ignore the action
                         }
                     }
                     else if (parts.Length == 2)
