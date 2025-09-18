@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NihongoBot.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250918085515_UserCharacterSelection")]
+    [Migration("20250918192017_UserCharacterSelection")]
     partial class UserCharacterSelection
     {
         /// <inheritdoc />
@@ -833,6 +833,9 @@ namespace NihongoBot.Persistence.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EnabledCharacters")
+                        .HasColumnType("text");
 
                     b.Property<int>("QuestionsPerDay")
                         .ValueGeneratedOnAdd()

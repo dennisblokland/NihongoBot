@@ -831,6 +831,9 @@ namespace NihongoBot.Persistence.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EnabledCharacters")
+                        .HasColumnType("text");
+
                     b.Property<int>("QuestionsPerDay")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
