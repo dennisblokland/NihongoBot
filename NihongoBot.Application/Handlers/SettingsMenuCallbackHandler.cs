@@ -79,21 +79,21 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId, cancellationToken);
 		if (user == null)
 		{
-			return new InlineKeyboardMarkup(new[]
-			{
-				new[] { CreateMenuButton("Back", 1, messageId) }
-			});
+			return new InlineKeyboardMarkup(
+			[
+				[CreateMenuButton("Back", 1, messageId)]
+			]);
 		}
 
-		List<List<InlineKeyboardButton>> rows = new List<List<InlineKeyboardButton>>();
+		List<List<InlineKeyboardButton>> rows = [];
 
 		// Get all hiragana characters with their display names
 		Dictionary<string, string> characterDisplayNames = Domain.User.GetCharacterDisplayNames();
 		List<string> allCharacters = characterDisplayNames.Keys.ToList();
 
 		// Group characters by category for better organization
-		List<(string Category, List<string> Characters)> characterGroups = new List<(string, List<string>)>
-		{
+		List<(string Category, List<string> Characters)> characterGroups =
+		[
 			("Basic Vowels", new List<string> { "a", "i", "u", "e", "o" }),
 			("K Sounds", new List<string> { "ka", "ki", "ku", "ke", "ko" }),
 			("S Sounds", new List<string> { "sa", "shi", "su", "se", "so" }),
@@ -109,24 +109,24 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 				"nya", "nyu", "nyo", "hya", "hyu", "hyo", "mya", "myu", "myo",
 				"rya", "ryu", "ryo"
 			})
-		};
+		];
 
-		foreach (var group in characterGroups)
+		foreach ((string Category, List<string> Characters) group in characterGroups)
 		{
 			// Add category header that can toggle the whole category
 			bool allCategoryEnabled = group.Characters.All(character => user.IsCharacterEnabled(character));
 			string categoryToggleText = allCategoryEnabled ? $"✅ 📝 {group.Category}" : $"❌ 📝 {group.Category}";
 			string categoryToggleValue = allCategoryEnabled ? "false" : "true";
 			
-			rows.Add(new List<InlineKeyboardButton>
-			{
+			rows.Add(
+			[
 				CreateCategoryToggleButton(group.Category, group.Characters, categoryToggleValue, messageId, categoryToggleText)
-			});
+			]);
 
 			// Add characters in this group (2 per row to avoid too wide buttons)
 			for (int i = 0; i < group.Characters.Count; i += 2)
 			{
-				List<InlineKeyboardButton> row = new List<InlineKeyboardButton>();
+				List<InlineKeyboardButton> row = [];
 				
 				for (int j = i; j < Math.Min(i + 2, group.Characters.Count); j++)
 				{
@@ -144,17 +144,17 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 		}
 
 		// Add "Select All" and "Deselect All" buttons
-		rows.Add(new List<InlineKeyboardButton>
-		{
+		rows.Add(
+		[
 			CreateSpecialActionButton("select_all", messageId, "✅ Enable All"),
 			CreateSpecialActionButton("deselect_all", messageId, "❌ Disable All")
-		});
+		]);
 
 		// Add back button
-		rows.Add(new List<InlineKeyboardButton>
-		{
+		rows.Add(
+		[
 			CreateMenuButton("Back", 1, messageId)
-		});
+		]);
 
 		return new InlineKeyboardMarkup(rows);
 	}
