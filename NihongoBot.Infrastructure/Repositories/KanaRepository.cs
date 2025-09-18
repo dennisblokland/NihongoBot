@@ -79,6 +79,65 @@ public class KanaRepository(IServiceProvider serviceProvider) : AbstractDomainRe
 		return result;
 	}
 
+	public async Task<Kana?> GetRandomAsync(KanaType kanaType, List<string> enabledCharacters, CancellationToken cancellationToken = default)
+	{
+		if (enabledCharacters == null || enabledCharacters.Count == 0)
+			return null;
+
+		return await DatabaseSet
+			.Where(x => x.Type == kanaType && enabledCharacters.Contains(x.Romaji))
+			.OrderBy(x => Guid.NewGuid())
+			.FirstOrDefaultAsync(cancellationToken);
+	}
+
+	public async Task<List<Kana>> GetWrongAnswersAsync(string correctAnswer, KanaType kanaType, List<string> enabledCharacters, int count, CancellationToken cancellationToken = default)
+	{
+		if (enabledCharacters == null || enabledCharacters.Count == 0)
+			return new List<Kana>();
+
+		// Get all kana of the same type except the correct answer, filtered by enabled characters
+		List<Kana> allKana = await DatabaseSet
+			.Where(x => x.Type == kanaType && x.Romaji != correctAnswer && enabledCharacters.Contains(x.Romaji))
+			.ToListAsync(cancellationToken);
+
+		if (allKana.Count == 0)
+			return new List<Kana>();
+
+		// Find similar answers (same first character or similar sounds)
+		List<Kana> similarKana = allKana
+			.Where(k => k.Romaji.StartsWith(correctAnswer[0]) || 
+			           CalculateSimilarity(k.Romaji, correctAnswer) > 0.5)
+			.ToList();
+
+		// Find dissimilar answers
+		List<Kana> dissimilarKana = allKana
+			.Where(k => !similarKana.Contains(k))
+			.ToList();
+
+		List<Kana> result = new List<Kana>();
+		
+		// Add one similar answer if available
+		if (similarKana.Count > 0)
+		{
+			Random random = new Random();
+			result.Add(similarKana[random.Next(similarKana.Count)]);
+		}
+
+		// Fill remaining slots with dissimilar answers
+		int remaining = count - result.Count;
+		if (dissimilarKana.Count > 0 && remaining > 0)
+		{
+			Random random = new Random();
+			List<Kana> selectedDissimilar = dissimilarKana
+				.OrderBy(x => random.Next())
+				.Take(remaining)
+				.ToList();
+			result.AddRange(selectedDissimilar);
+		}
+
+		return result;
+	}
+
 	private static double CalculateSimilarity(string s1, string s2)
 	{
 		if (string.IsNullOrEmpty(s1) || string.IsNullOrEmpty(s2))

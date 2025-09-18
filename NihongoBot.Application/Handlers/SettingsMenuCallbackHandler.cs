@@ -42,7 +42,8 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 			1 => new InlineKeyboardMarkup(
 			[
 				[CreateMenuButton("Questions per day", 2 , messageId!.Value)],
-				[CreateMenuButton("Word of the day", 3,  messageId!.Value)]
+				[CreateMenuButton("Word of the day", 3,  messageId!.Value)],
+				[CreateMenuButton("Character selection", 4,  messageId!.Value)]
 			]),
 			2 => new InlineKeyboardMarkup(Enumerable.Range(1, 6)
 				.Select(i => new[] { CreateOptionButton(SettingType.QuestionsPerDay, i.ToString(), messageId!.Value) })
@@ -52,6 +53,7 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 				[CreateOptionButton(SettingType.WordOfTheDay, "True",  messageId!.Value, "Enable" )],
 				[CreateOptionButton(SettingType.WordOfTheDay, "False", messageId!.Value, "Disable")]
 			]),
+			4 => await CreateCharacterSelectionMenu(chatId, messageId!.Value, cancellationToken),
 			_ => new InlineKeyboardMarkup(new[]
 			{
 				new[] { CreateMenuButton("Back", 1, messageId!.Value) }
@@ -70,6 +72,53 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 	{
 		SettingsOptionCallbackData data = new SettingsOptionCallbackData(type, value) { MessageId = messageId };
 		return InlineKeyboardButton.WithCallbackData(textOverride ?? value, Serialize(data));
+	}
+
+	private async Task<InlineKeyboardMarkup> CreateCharacterSelectionMenu(long chatId, int messageId, CancellationToken cancellationToken)
+	{
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(chatId, cancellationToken);
+		if (user == null)
+		{
+			return new InlineKeyboardMarkup(new[]
+			{
+				new[] { CreateMenuButton("Back", 1, messageId) }
+			});
+		}
+
+		List<List<InlineKeyboardButton>> rows = new List<List<InlineKeyboardButton>>();
+
+		// Create toggle buttons for each character
+		string[] characters = { "ka", "ki", "ku", "ke", "ko" };
+		string[] characterLabels = { "Ka (か)", "Ki (き)", "Ku (く)", "Ke (け)", "Ko (こ)" };
+		bool[] enabledStates = { user.KaEnabled, user.KiEnabled, user.KuEnabled, user.KeEnabled, user.KoEnabled };
+
+		for (int i = 0; i < characters.Length; i++)
+		{
+			string character = characters[i];
+			string label = characterLabels[i];
+			bool isEnabled = enabledStates[i];
+			string buttonText = isEnabled ? $"✅ {label}" : $"❌ {label}";
+			string toggleValue = isEnabled ? "false" : "true";
+			
+			rows.Add(new List<InlineKeyboardButton>
+			{
+				CreateCharacterToggleButton(character, toggleValue, messageId, buttonText)
+			});
+		}
+
+		// Add back button
+		rows.Add(new List<InlineKeyboardButton>
+		{
+			CreateMenuButton("Back", 1, messageId)
+		});
+
+		return new InlineKeyboardMarkup(rows);
+	}
+
+	private InlineKeyboardButton CreateCharacterToggleButton(string character, string value, int messageId, string buttonText)
+	{
+		SettingsOptionCallbackData data = new SettingsOptionCallbackData(SettingType.CharacterSelection, $"{character}:{value}") { MessageId = messageId };
+		return InlineKeyboardButton.WithCallbackData(buttonText, Serialize(data));
 	}
 
 	private static string Serialize(ICallbackData data)

@@ -21,6 +21,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(u => u.QuestionsPerDay).HasDefaultValue(2);
 		builder.Property(u => u.WordOfTheDayEnabled).HasDefaultValue(true);
 
+		// Character selection properties with default values
+		builder.Property(u => u.KaEnabled).HasDefaultValue(true);
+		builder.Property(u => u.KiEnabled).HasDefaultValue(true);
+		builder.Property(u => u.KuEnabled).HasDefaultValue(true);
+		builder.Property(u => u.KeEnabled).HasDefaultValue(true);
+		builder.Property(u => u.KoEnabled).HasDefaultValue(true);
+
 		// Converter: TimeZoneInfo <-> IANA string
 		ValueConverter<TimeZoneInfo, string> tzConverter = new(
 			toProvider => ToIanaForStorage(toProvider),

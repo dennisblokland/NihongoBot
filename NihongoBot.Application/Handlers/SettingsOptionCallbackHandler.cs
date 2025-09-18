@@ -38,6 +38,25 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
             case SettingType.WordOfTheDay:
                 user.WordOfTheDayEnabled = bool.Parse(callbackData.Value);
                 break;
+            case SettingType.CharacterSelection:
+                // Parse character and enabled state from format "character:true/false"
+                string[] parts = callbackData.Value.Split(':');
+                if (parts.Length == 2)
+                {
+                    string character = parts[0];
+                    bool enabled = bool.Parse(parts[1]);
+                    user.UpdateCharacterSelection(character, enabled);
+                    
+                    // Save changes and refresh the character selection menu
+                    await _userRepository.SaveChangesAsync(cancellationToken);
+                    
+                    // Redirect back to character selection menu to show updated state
+                    SettingsMenuCallbackData redirectData = new SettingsMenuCallbackData(4) { MessageId = callbackData.MessageId };
+                    SettingsMenuCallbackHandler menuHandler = new SettingsMenuCallbackHandler(_botClient, _userRepository);
+                    await menuHandler.HandleAsync(chatId, redirectData, cancellationToken);
+                    return;
+                }
+                break;
             default:
                 await _botClient.SendMessage(chatId, "Invalid setting.", cancellationToken: cancellationToken);
                 return;

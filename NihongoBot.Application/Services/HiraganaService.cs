@@ -20,6 +20,7 @@ public class HiraganaService
 	private readonly ITelegramBotClient _botClient;
 	private readonly IQuestionRepository _questionRepository;
 	private readonly IKanaRepository _kanaRepository;
+	private readonly IUserRepository _userRepository;
 	private readonly IImageCacheService _imageCacheService;
 	private readonly IStrokeOrderService _strokeOrderService;
 	private readonly ILogger<HiraganaService> _logger;
@@ -27,6 +28,7 @@ public class HiraganaService
 	public HiraganaService(
 		IQuestionRepository questionRepository,
 		IKanaRepository kanaRepository,
+		IUserRepository userRepository,
 		ITelegramBotClient botClient,
 		IImageCacheService imageCacheService,
 		IStrokeOrderService strokeOrderService,
@@ -37,6 +39,7 @@ public class HiraganaService
 		_logger = logger;
 		_questionRepository = questionRepository;
 		_kanaRepository = kanaRepository;
+		_userRepository = userRepository;
 		_imageCacheService = imageCacheService;
 		_strokeOrderService = strokeOrderService;
 	}
@@ -45,11 +48,26 @@ public class HiraganaService
 	{
 		_logger.LogInformation("Sending Hiragana message at {Time}", DateTime.Now);
 
-		Kana? kana = await _kanaRepository.GetRandomAsync(KanaType.Hiragana, cancellationToken);
+		// Get user to check enabled characters
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(telegramId, cancellationToken);
+		if (user == null)
+		{
+			_logger.LogWarning("User not found for Telegram ID: {TelegramId}", telegramId);
+			return;
+		}
+
+		List<string> enabledCharacters = user.GetEnabledCharacters();
+		if (enabledCharacters.Count == 0)
+		{
+			_logger.LogWarning("No enabled characters for user: {TelegramId}", telegramId);
+			return;
+		}
+
+		Kana? kana = await _kanaRepository.GetRandomAsync(KanaType.Hiragana, enabledCharacters, cancellationToken);
 
 		if (kana == null)
 		{
-			_logger.LogWarning("No Kana found in the database.");
+			_logger.LogWarning("No Kana found in the database with enabled characters for user: {TelegramId}", telegramId);
 			return;
 		}
 
@@ -72,16 +90,31 @@ public class HiraganaService
 	{
 		_logger.LogInformation("Sending Multiple Choice Hiragana message at {Time}", DateTime.Now);
 
-		Kana? kana = await _kanaRepository.GetRandomAsync(KanaType.Hiragana, cancellationToken);
-
-		if (kana == null)
+		// Get user to check enabled characters
+		Domain.User? user = await _userRepository.GetByTelegramIdAsync(telegramId, cancellationToken);
+		if (user == null)
 		{
-			_logger.LogWarning("No Kana found in the database.");
+			_logger.LogWarning("User not found for Telegram ID: {TelegramId}", telegramId);
 			return;
 		}
 
-		// Get wrong answers
-		List<Kana> wrongAnswers = await _kanaRepository.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, 3, cancellationToken);
+		List<string> enabledCharacters = user.GetEnabledCharacters();
+		if (enabledCharacters.Count == 0)
+		{
+			_logger.LogWarning("No enabled characters for user: {TelegramId}", telegramId);
+			return;
+		}
+
+		Kana? kana = await _kanaRepository.GetRandomAsync(KanaType.Hiragana, enabledCharacters, cancellationToken);
+
+		if (kana == null)
+		{
+			_logger.LogWarning("No Kana found in the database with enabled characters for user: {TelegramId}", telegramId);
+			return;
+		}
+
+		// Get wrong answers from enabled characters
+		List<Kana> wrongAnswers = await _kanaRepository.GetWrongAnswersAsync(kana.Romaji, KanaType.Hiragana, enabledCharacters, 3, cancellationToken);
 		
 		// Create list of all options (correct + wrong)
 		List<string> allOptions = [kana.Romaji, .. wrongAnswers.Select(w => w.Romaji)];
