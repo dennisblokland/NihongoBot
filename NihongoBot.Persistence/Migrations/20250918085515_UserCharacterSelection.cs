@@ -10,63 +10,18 @@ namespace NihongoBot.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "KaEnabled",
+            migrationBuilder.AddColumn<string>(
+                name: "EnabledCharacters",
                 table: "Users",
-                type: "boolean",
-                nullable: false,
-                defaultValue: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "KiEnabled",
-                table: "Users",
-                type: "boolean",
-                nullable: false,
-                defaultValue: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "KuEnabled",
-                table: "Users",
-                type: "boolean",
-                nullable: false,
-                defaultValue: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "KeEnabled",
-                table: "Users",
-                type: "boolean",
-                nullable: false,
-                defaultValue: true);
-
-            migrationBuilder.AddColumn<bool>(
-                name: "KoEnabled",
-                table: "Users",
-                type: "boolean",
-                nullable: false,
-                defaultValue: true);
+                type: "text",
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "KaEnabled",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "KiEnabled",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "KuEnabled",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "KeEnabled",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "KoEnabled",
+                name: "EnabledCharacters",
                 table: "Users");
         }
     }

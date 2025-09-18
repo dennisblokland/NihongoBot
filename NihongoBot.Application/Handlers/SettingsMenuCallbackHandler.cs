@@ -87,24 +87,64 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 
 		List<List<InlineKeyboardButton>> rows = new List<List<InlineKeyboardButton>>();
 
-		// Create toggle buttons for each character
-		string[] characters = { "ka", "ki", "ku", "ke", "ko" };
-		string[] characterLabels = { "Ka (か)", "Ki (き)", "Ku (く)", "Ke (け)", "Ko (こ)" };
-		bool[] enabledStates = { user.KaEnabled, user.KiEnabled, user.KuEnabled, user.KeEnabled, user.KoEnabled };
+		// Get all hiragana characters with their display names
+		Dictionary<string, string> characterDisplayNames = Domain.User.GetCharacterDisplayNames();
+		List<string> allCharacters = characterDisplayNames.Keys.ToList();
 
-		for (int i = 0; i < characters.Length; i++)
+		// Group characters by category for better organization
+		List<(string Category, List<string> Characters)> characterGroups = new List<(string, List<string>)>
 		{
-			string character = characters[i];
-			string label = characterLabels[i];
-			bool isEnabled = enabledStates[i];
-			string buttonText = isEnabled ? $"✅ {label}" : $"❌ {label}";
-			string toggleValue = isEnabled ? "false" : "true";
-			
+			("Basic Vowels", new List<string> { "a", "i", "u", "e", "o" }),
+			("K Sounds", new List<string> { "ka", "ki", "ku", "ke", "ko" }),
+			("S Sounds", new List<string> { "sa", "shi", "su", "se", "so" }),
+			("T Sounds", new List<string> { "ta", "chi", "tsu", "te", "to" }),
+			("N Sounds", new List<string> { "na", "ni", "nu", "ne", "no" }),
+			("H Sounds", new List<string> { "ha", "hi", "fu", "he", "ho" }),
+			("M Sounds", new List<string> { "ma", "mi", "mu", "me", "mo" }),
+			("Y Sounds", new List<string> { "ya", "yu", "yo" }),
+			("R Sounds", new List<string> { "ra", "ri", "ru", "re", "ro" }),
+			("W/N Sounds", new List<string> { "wa", "wo", "n" }),
+			("Combination Sounds", new List<string> { 
+				"kya", "kyu", "kyo", "sha", "shu", "sho", "cha", "chu", "cho",
+				"nya", "nyu", "nyo", "hya", "hyu", "hyo", "mya", "myu", "myo",
+				"rya", "ryu", "ryo"
+			})
+		};
+
+		foreach (var group in characterGroups)
+		{
+			// Add category header
 			rows.Add(new List<InlineKeyboardButton>
 			{
-				CreateCharacterToggleButton(character, toggleValue, messageId, buttonText)
+				InlineKeyboardButton.WithCallbackData($"📝 {group.Category}", "category_header")
 			});
+
+			// Add characters in this group (2 per row to avoid too wide buttons)
+			for (int i = 0; i < group.Characters.Count; i += 2)
+			{
+				List<InlineKeyboardButton> row = new List<InlineKeyboardButton>();
+				
+				for (int j = i; j < Math.Min(i + 2, group.Characters.Count); j++)
+				{
+					string character = group.Characters[j];
+					string label = characterDisplayNames[character];
+					bool isEnabled = user.IsCharacterEnabled(character);
+					string buttonText = isEnabled ? $"✅ {label}" : $"❌ {label}";
+					string toggleValue = isEnabled ? "false" : "true";
+					
+					row.Add(CreateCharacterToggleButton(character, toggleValue, messageId, buttonText));
+				}
+				
+				rows.Add(row);
+			}
 		}
+
+		// Add "Select All" and "Deselect All" buttons
+		rows.Add(new List<InlineKeyboardButton>
+		{
+			CreateSpecialActionButton("select_all", messageId, "✅ Enable All"),
+			CreateSpecialActionButton("deselect_all", messageId, "❌ Disable All")
+		});
 
 		// Add back button
 		rows.Add(new List<InlineKeyboardButton>
@@ -118,6 +158,12 @@ public class SettingsMenuCallbackHandler : ITelegramCallbackHandler<SettingsMenu
 	private InlineKeyboardButton CreateCharacterToggleButton(string character, string value, int messageId, string buttonText)
 	{
 		SettingsOptionCallbackData data = new SettingsOptionCallbackData(SettingType.CharacterSelection, $"{character}:{value}") { MessageId = messageId };
+		return InlineKeyboardButton.WithCallbackData(buttonText, Serialize(data));
+	}
+
+	private InlineKeyboardButton CreateSpecialActionButton(string action, int messageId, string buttonText)
+	{
+		SettingsOptionCallbackData data = new SettingsOptionCallbackData(SettingType.CharacterSelection, $"special:{action}") { MessageId = messageId };
 		return InlineKeyboardButton.WithCallbackData(buttonText, Serialize(data));
 	}
 

@@ -39,13 +39,34 @@ public class SettingsOptionCallbackHandler : ITelegramCallbackHandler<SettingsOp
                 user.WordOfTheDayEnabled = bool.Parse(callbackData.Value);
                 break;
             case SettingType.CharacterSelection:
-                // Parse character and enabled state from format "character:true/false"
+                // Parse character and enabled state from format "character:true/false" or "special:action"
                 string[] parts = callbackData.Value.Split(':');
                 if (parts.Length == 2)
                 {
-                    string character = parts[0];
-                    bool enabled = bool.Parse(parts[1]);
-                    user.UpdateCharacterSelection(character, enabled);
+                    string firstPart = parts[0];
+                    string secondPart = parts[1];
+                    
+                    if (firstPart == "special")
+                    {
+                        // Handle special actions
+                        if (secondPart == "select_all")
+                        {
+                            // Enable all characters - set EnabledCharacters to null (default)
+                            user.EnabledCharacters = null;
+                        }
+                        else if (secondPart == "deselect_all")
+                        {
+                            // Disable all characters - set to empty list
+                            user.EnabledCharacters = System.Text.Json.JsonSerializer.Serialize(new List<string>());
+                        }
+                    }
+                    else
+                    {
+                        // Handle individual character toggle
+                        string character = firstPart;
+                        bool enabled = bool.Parse(secondPart);
+                        user.UpdateCharacterSelection(character, enabled);
+                    }
                     
                     // Save changes and refresh the character selection menu
                     await _userRepository.SaveChangesAsync(cancellationToken);
