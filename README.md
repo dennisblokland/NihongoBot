@@ -9,7 +9,7 @@ NihongoBot is a Telegram bot written in C# to help users learn Hiragana.
 
 ## Prerequisites
 
-- [.NET Core 9.0 SDK](https://dotnet.microsoft.com/download)
+- [.NET Core 10.0 SDK](https://dotnet.microsoft.com/download)
 - A valid Telegram Bot Token
 
 ## Running Locally
