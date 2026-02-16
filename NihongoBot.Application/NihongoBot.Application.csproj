@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 <ItemGroup>
-    <PackageReference Include="Hangfire" Version="1.8.22" />
+    <PackageReference Include="Hangfire" Version="1.8.23" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.1" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.2" />
